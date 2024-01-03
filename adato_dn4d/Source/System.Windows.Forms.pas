@@ -1,4 +1,4 @@
-{$I Jedi.inc}
+{$I Adato.inc}
 //
 // This file holds Delphi implementations of .Net types defined in
 // System.Windows.Forms.

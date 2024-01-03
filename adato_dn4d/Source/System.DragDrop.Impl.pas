@@ -1,5 +1,5 @@
 unit System.DragDrop.Impl;
-{$I Jedi.inc}
+{$I Adato.inc}
 interface
 uses
   WinApi.Windows,

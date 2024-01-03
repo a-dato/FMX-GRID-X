@@ -6,7 +6,7 @@
 {                                                       }
 {*******************************************************}
 
-{$I Jedi.inc}
+{$I Adato.inc}
 
 unit System.Collections.Generic.Casting;
 

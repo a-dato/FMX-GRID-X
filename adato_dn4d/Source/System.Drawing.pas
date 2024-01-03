@@ -1,4 +1,4 @@
-{$i Jedi.inc}
+{$i Adato.inc}
 unit System.Drawing;
 
 interface

@@ -1,4 +1,4 @@
-{$I jedi.inc}
+{$I Adato.inc}
 
 unit System.Collections.ListInterface.impl;
 

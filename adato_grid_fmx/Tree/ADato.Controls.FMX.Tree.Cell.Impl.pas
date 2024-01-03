@@ -1,4 +1,4 @@
-{$I Jedi.inc}
+{$I Adato.inc}
 
 unit ADato.Controls.FMX.Tree.Cell.Impl;
 

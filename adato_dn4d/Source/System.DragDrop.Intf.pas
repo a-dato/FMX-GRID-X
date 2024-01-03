@@ -1,5 +1,5 @@
 unit System.DragDrop.Intf;
-{$I Jedi.inc}
+{$I Adato.inc}
 interface
 uses
   WinApi.ActiveX,

@@ -1,4 +1,4 @@
-{$I jedi.inc}
+{$I Adato.inc}
 
 unit ADato_Renderer_intf;
 

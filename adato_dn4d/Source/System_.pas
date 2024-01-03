@@ -1,4 +1,4 @@
-{$I Jedi.inc}
+{$I Adato.inc}
 
 unit System_;
 {$WARN DUPLICATE_CTOR_DTOR OFF}        //[dcc64 Warning] System_.pas(14320): W1029 Duplicate constructor 'IntPtr.CreateUnmanagedPointer' with identical parameters will be inacessible from C++

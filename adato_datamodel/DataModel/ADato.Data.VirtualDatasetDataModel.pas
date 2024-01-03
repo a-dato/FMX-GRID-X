@@ -1,4 +1,4 @@
-{$I Jedi.inc}
+{$I Adato.inc}
 unit ADato.Data.VirtualDatasetDataModel;
 
 {$R-} {turn off range checking}

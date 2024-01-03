@@ -1,4 +1,4 @@
-{$I Jedi.inc}
+{$I Adato.inc}
 unit Delphi.Extensions.VirtualDataset;
 {$R-,T-,H+,X+}
 

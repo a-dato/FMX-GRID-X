@@ -1,4 +1,4 @@
-{$I Jedi.inc}
+{$I Adato.inc}
 
 {$IFDEF CROSSVCL}
 {$DEFINE MSWINDOWS}
