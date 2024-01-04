@@ -1,9 +1,8 @@
 {$I Adato.inc}
 
-{$IFDEF DELPHI}
+{$R-}
+
 unit ADato.Controls.Tree.Editors.Impl;
-{$ELSE}
-{$ENDIF}
 
 interface
 

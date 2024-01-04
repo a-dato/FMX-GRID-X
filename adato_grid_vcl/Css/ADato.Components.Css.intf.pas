@@ -1,5 +1,7 @@
 {$I Adato.inc}
 
+{$R-}
+
 unit ADato.Components.Css.intf;
 
 interface

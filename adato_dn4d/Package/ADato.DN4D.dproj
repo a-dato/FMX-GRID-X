@@ -230,6 +230,7 @@
         <DCCReference Include="..\Source\System.Collections.pas"/>
         <DCCReference Include="..\Source\System.Collections.Specialized.pas"/>
         <DCCReference Include="..\Source\System.ComponentModel.pas"/>
+        <None Include="..\Source\Adato.inc"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

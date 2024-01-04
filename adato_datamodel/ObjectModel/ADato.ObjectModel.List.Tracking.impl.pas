@@ -406,7 +406,6 @@ begin
   _EditContext := nil;
 
   item := Context.Context;
-  savableItem := _contextUpdater.ConvertToDataItem(item);
 
   if e.IsEdit then
   begin
@@ -441,6 +440,10 @@ begin
   end
   else if e.IsNew then
   begin
+    if _contextUpdater <> nil then
+      savableItem := _contextUpdater.ConvertToDataItem(item) else
+      savableItem := item;
+
     UpdateChangedItem(savableItem, TObjectListChangeType.Added);
 
     if _OnItemChanged <> nil then

@@ -1,5 +1,7 @@
 {$I Adato.inc}
 
+{$R-}
+
 unit ADato.Components.Css.impl;
 
 interface
@@ -7594,7 +7596,7 @@ var
 begin
   Result := inherited TryGetValue(Key, C);
   if Result then
-    Value := CColor.FromArgb(Convert.ToInt32(C));
+    Value := CColor.FromArgb(Convert.ToUInt32(C));
 end;
 
 initialization

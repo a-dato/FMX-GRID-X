@@ -4433,6 +4433,8 @@ begin
 
       if (_View <> nil) and ((Columns.Count = 0) or _defaultColumns) then
       begin
+        Columns.Clear;
+
         View.CreateDefaultColumns(_columns);
         // CreateDefaultColumns sets _defaultColumns to False,
         // therefore we need to reset it
