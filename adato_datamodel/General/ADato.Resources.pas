@@ -1,4 +1,5 @@
 {$I Adato.inc}
+
 unit ADato.Resources;
 
 interface
@@ -92,8 +93,6 @@ type
     class function TaskDeadlineViolation: CString;
     class function TaskConstraintDateViolation: CString;
     class function TaskScheduledOutsideStageWindow: CString;
-    class function NoResourceImplementsAllProperties: CString;
-    class function NoResourceImplementsSkill: CString;
     class function InvalidCombinationOfRequirements: CString;
     class function GlobalSkillsCannotBeAssigned: CString;
     class function IllegalDependency: CString;
@@ -157,6 +156,8 @@ type
   end;
 
 implementation
+
+{$R *.res}
 
 uses
   {$IFDEF DELPHI}
@@ -223,8 +224,6 @@ Resourcestring
   SNonWorkingText = 'not working';
   SNoRequirementDuration = 'Duration not set for requirement ''{0}'', hence this requirement will be ingored.';
   SNoResourceAssignedToTask = 'No resource requirements set for task ''{0}''.';
-  SNoResourceImplementsAllProperties = 'None of your resources implements skill ''{0}'' given the properties set for this assignment. Task will be schedulled against the project calendar, allocation will not show in load graphs.';
-  SNoResourceImplementsSkill = 'None of your resources implements skill ''{0}''.';
   SOccurrenceText = 'for {0} occurences';
   SPeriodDay = 'Resources are {0} on {1}';
   SPeriodDayDay = 'Resources are {0} between {1} and {2}';
@@ -393,16 +392,6 @@ end;
 class function ADatoResources.DurationNotSetIgnoreTask: CString;
 begin
   Result := SDurationNotSetIgnoreTask;
-end;
-
-class function ADatoResources.NoResourceImplementsAllProperties: CString;
-begin
-  Result := SNoResourceImplementsAllProperties;
-end;
-
-class function ADatoResources.NoResourceImplementsSkill: CString;
-begin
-  Result := SNoResourceImplementsSkill;
 end;
 
 class function ADatoResources.IllegalDependency: CString;
