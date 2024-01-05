@@ -8201,6 +8201,9 @@ begin
   end;
 
   inherited;
+
+  if MakeViewNil and (ListComparer <> nil) then
+    ListComparer.ResetSortedRows(False);
 end;
 
 procedure TCustomTreeControl.ApplySort(const Sorts: List<IListSortDescription>; const Filters: List<IListFilterDescription>);
@@ -8682,7 +8685,7 @@ begin
 
     co.AddPair('Property', CStringToString(column.PropertyName));
     co.AddPair('Caption', CStringToString(column.Caption));
-    if column.Visible then
+    if column.Visible or column.Frozen then
       co.AddPair('Visible', TJSONTrue.Create) else
       co.AddPair('Visible', TJSONFalse.Create);
     if column.ReadOnly then
