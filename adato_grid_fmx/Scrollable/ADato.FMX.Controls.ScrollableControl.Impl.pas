@@ -502,9 +502,9 @@ end;
 procedure TScrollableControl.SetViewportPosition(const Value: TPointF);
 begin
 {$IFDEF DO_NOT_ROUND_VIEWPORT_VALUES}
-    AniCalculations.ViewportPosition := Value
+  AniCalculations.ViewportPosition := Value
 {$ELSE}
-    inherited ViewportPosition := Value;
+  inherited ViewportPosition := Value;
 {$ENDIF}
 end;
 
