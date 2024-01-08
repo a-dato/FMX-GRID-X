@@ -388,6 +388,7 @@ type
     function        IndexOfAny(const anyOf: array of SystemChar; startIndex: Integer) : Integer; overload;
     function        IndexOfAny(const anyOf: array of SystemChar; startIndex: Integer; count: Integer) : Integer; overload;
     class function  IsNullOrEmpty(const AValue: CString): Boolean; static;
+    function        IsNull: Boolean;
     function        LastIndexOf(const value: SystemChar): Integer; overload;
     function        LastIndexOf(const value: SystemChar; startIndex: Integer; count: Integer): Integer; overload;
     function        LastIndexOfAny(const anyOf: array of SystemChar) : Integer; overload;
@@ -7235,6 +7236,11 @@ begin
   Result := (AValue._intf = nil) or (AValue.Length = 0);
 end;
 
+function CString.IsNull: Boolean;
+begin
+  Result := _intf = nil;
+end;
+
 function CString.LastIndexOf(const value: SystemChar): Integer;
 var
   l: Integer;
@@ -8653,8 +8659,14 @@ end;
 
 function CObject.Equals(const AValue: string): Boolean;
 begin
-  if &Type.GetTypeCode(FValue.TypeInfo) = TypeCode.String then
-    Result := CString(FValue.GetReferenceToRawData^).Equals(AValue) else
+  if FValue.TypeInfo = TypeInfo(string) then
+    Result := string(FValue.GetReferenceToRawData^).Equals(AValue)
+  else if FValue.TypeInfo = TypeInfo(CString) then
+  begin
+    var p: PCString := FValue.GetReferenceToRawData;
+    Result := not p^.IsNull and p^.Equals(AValue);
+  end
+  else
     Result := False;
 end;
 
@@ -8678,7 +8690,10 @@ begin
   if objA.FValue.TypeInfo = TypeInfo(string) then
     Result := string(objA.FValue.GetReferenceToRawData^).Equals(Value)
   else if objA.FValue.TypeInfo = TypeInfo(CString) then
-    Result := CString(objA.FValue.GetReferenceToRawData^).Equals(Value)
+  begin
+    var p: PCString := objA.FValue.GetReferenceToRawData;
+    Result := not p^.IsNull and p^.Equals(Value);
+  end
   else
     Result := False;
 end;
