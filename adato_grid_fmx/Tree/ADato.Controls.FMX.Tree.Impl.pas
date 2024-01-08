@@ -1759,8 +1759,8 @@ type
     // Only for hierarchy mode (DataModelView). Affects Row.IsExpanded, View.IsExpanded(Row)
   end;
 
-  TFMXTreeControl = {$IFDEF DOTNET}public{$ENDIF} class(TCustomTreeControl)
   [ComponentPlatformsAttribute(pidAllPlatforms)]
+  TFMXTreeControl = {$IFDEF DOTNET}public{$ENDIF} class(TCustomTreeControl)
   published
     property AcceptsTab;
     property AcceptsReturn;
