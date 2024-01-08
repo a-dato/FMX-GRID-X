@@ -409,6 +409,7 @@ type
       _RowLevelCached and Row does NOT change its level during full life (because GRID has proper number of vert.
       hierarchical grid lines for each row level), when user changes level - Tree should load row
       with proper level from the cache. }
+    procedure ResetRowData(const ADataItem: CObject; AIndex: Integer); virtual;
   strict protected // interface
     function get_BoundsRect: TRectF;
     function get_Control: TControl;
@@ -421,7 +422,6 @@ type
     function get_Top: Single;
     procedure set_Top(Value: Single);
     function get_DataItem: CObject;
-    procedure ResetRowData(const ADataItem: CObject; AIndex: Integer);
     procedure FreeNotification(AObject: TObject);
     function Equals(const Other: IRow): Boolean;
   public
