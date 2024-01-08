@@ -8674,12 +8674,12 @@ begin
 end;
 
 class function CObject.Equals(const objA: CObject; const Value: string): Boolean;
-var
-  s: CString;
-
 begin
-  if objA.TryAsType<CString>(s) then
-    Result := CString.Equals(s, Value) else
+  if objA.FValue.TypeInfo = TypeInfo(string) then
+    Result := string(objA.FValue.GetReferenceToRawData^).Equals(Value)
+  else if objA.FValue.TypeInfo = TypeInfo(CString) then
+    Result := CString(objA.FValue.GetReferenceToRawData^).Equals(Value)
+  else
     Result := False;
 end;
 
@@ -8691,21 +8691,32 @@ end;
 function CObject.GetHashCode: Integer;
 begin
   case &Type.GetTypeCode(FValue.TypeInfo) of
-    TypeCode.Array: Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0);
-    TypeCode.Boolean: Result := Integer(FValue.AsBoolean);
-    TypeCode.String: Result := FValue.AsType<CString>.GetHashCode;
-    TypeCode.Int32: Result := FValue.AsInteger;
-    TypeCode.Int64: Result := FValue.AsInt64;
+    TypeCode.Array:
+      Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0);
+    TypeCode.Boolean:
+      Result := Integer(FValue.AsBoolean);
+    TypeCode.String:
+      if FValue.TypeInfo = TypeInfo(string) then
+        Result := string(FValue.GetReferenceToRawData^).GetHashCode else
+        Result := CString(FValue.GetReferenceToRawData^).GetHashCode;
+    TypeCode.Int32:
+      Result := FValue.AsInteger;
+    TypeCode.Int64:
+      Result := FValue.AsInt64;
     TypeCode.Interface:
     begin
       Assert(Interfaces.Supports(Self, IBaseInterface));
       // MUST use AsType<IBaseInterface> here, we do not know which interface we actually have!
       Result := AsType<IBaseInterface>.GetHashCode;
     end;
-    TypeCode.DateTime: Result := CDateTime(FValue.GetReferenceToRawData^).GetHashCode;
-    //TTypes.System_TimeSpan: Result := CTimeSpan(FValue.GetReferenceToRawData^).GetHashCode;
-    TypeCode.Type: Result := &Type(FValue.GetReferenceToRawData^).GetHashCode;
-    TypeCode.Double: Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0);
+    TypeCode.DateTime:
+      if FValue.TypeInfo = TypeInfo(TDateTime) then
+        Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0) else
+        Result := CDateTime(FValue.GetReferenceToRawData^).GetHashCode;
+    TypeCode.Type:
+      Result := &Type(FValue.GetReferenceToRawData^).GetHashCode;
+    TypeCode.Double:
+      Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0);
     TypeCode.Object:
       if FValue.TypeInfo = TypeInfo(IAutoObject) then
         Result := FValue.AsType<IAutoObject>.&Object.GetHashCode else
@@ -8715,8 +8726,6 @@ begin
       if FValue.TypeInfo.Kind = tkEnumeration then
         Result := FValue.AsOrdinal else
         Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0);
-//    TTypes.System_Guid:
-//      Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, SizeOf(TGuid), 0);
     TypeCode.Record:
       Result := THashBobJenkins.GetHashValue(FValue.GetReferenceToRawData^, FValue.DataSize, 0);
   else
