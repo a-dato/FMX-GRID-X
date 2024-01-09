@@ -42,6 +42,8 @@ type
     Founded: TLabel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure FMXTreeControl1EditStart(const Sender: TObject; e:
+        StartEditEventArgs);
   private
     function CreateCompanyList: List<ICompany>;
   protected
@@ -130,6 +132,12 @@ begin
     c.Founded := CDateTime.Now.AddDays(i);
     Result.Add(c);
   end;
+end;
+
+procedure TForm1.FMXTreeControl1EditStart(const Sender: TObject; e:
+    StartEditEventArgs);
+begin
+
 end;
 
 { TCompany }

@@ -1537,8 +1537,8 @@ type
     function  get_DataItem: CObject;
     function  get_Enabled: Boolean;
     procedure set_Enabled(const Value: Boolean);
-    function  get_Height: Integer;
-    procedure set_Height(Value: Integer);
+//    function  get_Height: Integer;
+//    procedure set_Height(Value: Integer);
     function  get_Index: Integer;
     procedure set_Index(Value: Integer);
     function  get_IsExpanded: Boolean;
@@ -1557,6 +1557,8 @@ type
     function HasChildren: Boolean;
     function Equals(const Other: ITreeRow) : Boolean;
     function ChildCount: Integer;
+    function  GetHeight(const PPI: Integer): Integer;
+    procedure SetHeight(const PPI: Integer; Value: Integer);
     function IsDataChanged: Boolean;
     function IsNew: Boolean;
     function IsEdit: Boolean;
@@ -1574,9 +1576,9 @@ type
       read  {$IFDEF DELPHI}get_Enabled{$ENDIF}
       write {$IFDEF DELPHI}set_Enabled{$ENDIF};
 
-    property Height: Integer
-      read  {$IFDEF DELPHI}get_Height{$ENDIF}
-      write {$IFDEF DELPHI}set_Height{$ENDIF};
+//    property Height: Integer
+//      read  {$IFDEF DELPHI}get_Height{$ENDIF}
+//      write {$IFDEF DELPHI}set_Height{$ENDIF};
 
     property Index: Integer
       read  {$IFDEF DELPHI}get_Index{$ENDIF}
@@ -1628,8 +1630,8 @@ type
     procedure set_IsSelected(const ARow: ITreeRow; Value: Boolean);
     function  get_Item(Index: Integer): ITreeRow;
     procedure set_Item(Index: Integer; const Value: ITreeRow);
-    function  get_RowHeight(const DataRow: CObject): Integer;
-    procedure set_RowHeight(const DataRow: CObject; Value: Integer);
+//    function  get_RowHeight(const DataRow: CObject): Integer;
+//    procedure set_RowHeight(const DataRow: CObject; Value: Integer);
     function  get_SortDescriptions: List<ITreeSortDescription>;
     function  get_TreeControl: ITreeControl;
   {$ENDIF}
@@ -1644,6 +1646,8 @@ type
     procedure CancelRowEdit;
     function  CanEdit(const Cell: ITreeCell): Boolean;
     procedure ClearPositioning;
+    function  GetRowHeight(const DataRow: CObject; const PPI: Integer): Integer;
+    procedure SetRowHeight(const DataRow: CObject; const PPI: Integer; Value: Integer);
     procedure SavePositioning;
     procedure SetPositioning(const SavedDataItem: CObject; SavedIndex: Integer);
 
@@ -1730,9 +1734,9 @@ type
       read  {$IFDEF DELPHI}get_Item{$ENDIF}
       write {$IFDEF DELPHI}set_Item{$ENDIF}; default;
 
-    property RowHeight[const DataRow: CObject]: Integer
-      read  {$IFDEF DELPHI}get_RowHeight{$ENDIF}
-      write {$IFDEF DELPHI}set_RowHeight{$ENDIF};
+//    property RowHeight[const DataRow: CObject]: Integer
+//      read  {$IFDEF DELPHI}get_RowHeight{$ENDIF}
+//      write {$IFDEF DELPHI}set_RowHeight{$ENDIF};
 
     property SortDescriptions: List<ITreeSortDescription>
       read {$IFDEF DELPHI}get_SortDescriptions{$ENDIF};

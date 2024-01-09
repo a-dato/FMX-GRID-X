@@ -247,8 +247,8 @@ type
     function  get_DataItem: CObject;
     function  get_Enabled: Boolean;
     procedure set_Enabled(const Value: Boolean);
-    function  get_Height: Integer; virtual;
-    procedure set_Height(Value: Integer); virtual;
+//    function  get_Height: Integer; virtual;
+//    procedure set_Height(Value: Integer); virtual;
     function  get_Index: Integer;
     procedure set_Index(Value: Integer);
     function  get_IsExpanded: Boolean;
@@ -260,6 +260,9 @@ type
     procedure set_Style(const Value: IStyle);
     function  get_Top: Integer;
     procedure set_Top(Value: Integer);
+
+    function  GetHeight(const PPI: Integer): Integer; virtual;
+    procedure SetHeight(const PPI: Integer; Value: Integer); virtual;
 
   public
     constructor Create( const AOwner: ITreeRowList;
@@ -288,9 +291,9 @@ type
     property DataItem: CObject
       read  get_DataItem;
 
-    property Height: Integer
-      read  get_Height
-      write set_Height;
+//    property Height: Integer
+//      read  get_Height
+//      write set_Height;
 
     property Style: IStyle
       read  get_Style
@@ -305,8 +308,11 @@ type
   protected
     _dataRow: IDataRow;
 
-    function  get_Height: Integer; override;
-    procedure set_Height(Value: Integer);  override;
+//    function  get_Height: Integer; override;
+//    procedure set_Height(Value: Integer);  override;
+
+    function  GetHeight(const PPI: Integer): Integer; override;
+    procedure SetHeight(const PPI: Integer; Value: Integer); override;
 
   public
     constructor Create( AOwner: ITreeRowList;
@@ -352,7 +358,7 @@ type
     procedure EndUpdate;
     procedure InitializeColumnPropertiesFromColumns;
     procedure SortData;
-    procedure RepositionTreeRows;
+    procedure RepositionTreeRows(PPI: Integer);
     function  Transpose(RowIndex: Integer) : Integer;
 
     function  get_Current: Integer;
@@ -375,10 +381,13 @@ type
     procedure set_IsSelected(const ARow: ITreeRow; Value: Boolean);
     function  get_Item(Index: Integer): ITreeRow; reintroduce; {$IFDEF DELPHI}overload;{$ENDIF} virtual;
     procedure set_Item(Index: Integer; const Value: ITreeRow); reintroduce; {$IFDEF DELPHI}overload;{$ENDIF} virtual;
-    function  get_RowHeight(const DataRow: CObject): Integer;
-    procedure set_RowHeight(const DataRow: CObject; Value: Integer);
+//    function  get_RowHeight(const DataRow: CObject): Integer;
+//    procedure set_RowHeight(const DataRow: CObject; Value: Integer);
     function  get_SortDescriptions: List<ITreeSortDescription>;
     function  get_TreeControl: ITreeControl;
+
+    function  GetRowHeight(const DataRow: CObject; const PPI: Integer): Integer;
+    procedure SetRowHeight(const DataRow: CObject; const PPI: Integer; Value: Integer);
 
     // ICellPropertiesProvider implementation
     function DataType(const Cell: ITreeCell) : &Type;
@@ -539,12 +548,15 @@ type
     procedure set_IsSelected(const ARow: ITreeRow; Value: Boolean);
     function  get_Item(Index: Integer): ITreeRow; reintroduce; {$IFDEF DELPHI}overload;{$ENDIF}
     procedure set_Item(Index: Integer; const Value: ITreeRow); reintroduce; {$IFDEF DELPHI}overload;{$ENDIF}
-    function  get_RowHeight(const DataRow: CObject): Integer;
-    procedure set_RowHeight(const DataRow: CObject; Value: Integer);
+//    function  get_RowHeight(const DataRow: CObject): Integer;
+//    procedure set_RowHeight(const DataRow: CObject; Value: Integer);
     function  get_SortDescriptions: List<ITreeSortDescription>;
     function  get_TreeControl: ITreeControl;
 
     procedure Clear(KeepCurrentView: Boolean = False); reintroduce; virtual;
+
+    function  GetRowHeight(const DataRow: CObject; const PPI: Integer): Integer;
+    procedure SetRowHeight(const DataRow: CObject; const PPI: Integer; Value: Integer);
 
     // ICellPropertiesProvider implementation
     function DataType(const Cell: ITreeCell) : &Type;
@@ -2911,7 +2923,7 @@ begin
               lineRect := CRectangle.Create( 0,
                                              0,
                                              ClientRectangle.Width,
-                                             HitInfo.Row.Height);
+                                             HitInfo.Row.GetHeight(CurrentPPI));
 
               offset := CPoint.Create(ClientRectangle.Left, HitInfo.Row.Top - TopRowPosition);
             end;
@@ -2933,7 +2945,7 @@ begin
                                              ClientRectangle.Width,
                                              3);
 
-              offset := CPoint.Create(ClientRectangle.Left, HitInfo.Row.Top - TopRowPosition + HitInfo.Row.Height - 2);
+              offset := CPoint.Create(ClientRectangle.Left, HitInfo.Row.Top - TopRowPosition + HitInfo.Row.GetHeight(CurrentPPI) - 2);
             end;
           end;
 
@@ -3005,7 +3017,7 @@ begin
     rowRect := CRectangle.Create( ClientRectangle.Left,
                                    HitInfo.Row.Top - TopRowPosition,
                                    ClientRectangle.Width,
-                                   HitInfo.Row.Height);
+                                   HitInfo.Row.GetHeight(CurrentPPI));
 
     AutoObject.Guard(CBitmap.Create(rowRect.Width, rowRect.Height), bmp);
     AutoObject.Guard(CGraphics.FromImage(bmp), bitmapGraphics);
@@ -3264,7 +3276,7 @@ begin
     begin
       treeRow := _View[rowIndex];
 
-      if treeRow.Top + treeRow.Height > y then
+      if treeRow.Top + treeRow.GetHeight(CurrentPPI) > y then
       begin
         Result.FirstRow := rowIndex;
         break;
@@ -3297,7 +3309,7 @@ begin
       dec(rowIndex);
 
       if not (TreeOption.DisplayPartialRows in _Options) and
-        (rowIndex > 0) and ((treeRow.Top + treeRow.Height) > y)
+        (rowIndex > 0) and ((treeRow.Top + treeRow.GetHeight(CurrentPPI)) > y)
       then
         dec(rowIndex);
 
@@ -3893,7 +3905,7 @@ begin
   Result := CRectangle.Create( layoutColumn.Left + cell.Indent,
                                treeRow.Top - (firstRowTop - ContentBounds.Y - _HeaderRows.Height),
                                layoutColumn.Width - cell.Indent,
-                               treeRow.Height);
+                               treeRow.GetHeight(CurrentPPI));
 
   // Append cells to the right
   for colspan := 1 to cell.Style.ColSpan - 1 do
@@ -4486,7 +4498,7 @@ begin
     if (Y >= top) and (Y <= top + 4) then
       HitInfo._hitPosition := HitInfo.HitPosition or TreeHitPosition.OnTopBorder;
 
-    i := top + row.Height;
+    i := top + row.GetHeight(CurrentPPI);
     if (Y < i) and (Y >= i - 4) then
       HitInfo._hitPosition := HitInfo.HitPosition or TreeHitPosition.OnBottomBorder;
 
@@ -4546,7 +4558,7 @@ begin
     begin
       treeRow := _View[rowIndex];
 
-      if treeRow.Top + treeRow.Height > yPos then
+      if treeRow.Top + treeRow.GetHeight(CurrentPPI) > yPos then
       begin
         Result := treeRow;
         break;
@@ -4606,7 +4618,7 @@ begin
   availableHeight := ContentBounds.Height - HeaderRows.Height;
   while (availableHeight > 0) and (startIndex < _View.Count) do
   begin
-    rowHeight := _View[startIndex].Height;
+    rowHeight := _View[startIndex].GetHeight(CurrentPPI);
     if rowHeight > availableHeight then
       break;
     inc(Result);
@@ -4631,7 +4643,7 @@ begin
 
   while (availableHeight > 0) and (StartIndex >= 0) do
   begin
-    rowHeight := _View[startIndex].Height;
+    rowHeight := _View[startIndex].GetHeight(CurrentPPI);
     if rowHeight > availableHeight then
       break;
 
@@ -4678,7 +4690,7 @@ begin
   n := tr;
   while (availableHeight > 0) and (n < cnt) do
   begin
-    rowHeight := _View[n].Height;
+    rowHeight := _View[n].GetHeight(CurrentPPI);
 
     dec(availableHeight, rowHeight);
     if availableHeight >= 0 then
@@ -4698,7 +4710,7 @@ begin
     n := tr - 1;
     while (availableHeight > 0) and (n >= 0) and (n < cnt) do
     begin
-      rowHeight := _View[n].Height;
+      rowHeight := _View[n].GetHeight(CurrentPPI);
       if rowHeight > availableHeight then
         break;
       dec(n);
@@ -4749,7 +4761,7 @@ begin
   n := tr;
   while (availableHeight > 0) and (n < cnt) do
   begin
-    rowHeight := _View[n].Height;
+    rowHeight := _View[n].GetHeight(CurrentPPI);
 
     dec(availableHeight, rowHeight);
     if availableHeight >= 0 then
@@ -4769,7 +4781,7 @@ begin
     n := tr - 1;
     while (availableHeight > 0) and (n >= 0) and (n < cnt) do
     begin
-      rowHeight := _View[n].Height;
+      rowHeight := _View[n].GetHeight(CurrentPPI);
       if rowHeight > availableHeight then
         break;
       dec(n);
@@ -5380,7 +5392,7 @@ begin
       rowHeight := FixedRowHeight else
       rowHeight := treeRow.Height;
     {$ELSE}
-    rowHeight := treeRow.Height;
+    rowHeight := treeRow.GetHeight(CurrentPPI);
     {$ENDIF}
 
     if (ViewRowIndex = 0) or LoadAsTemplateRow then
@@ -5401,7 +5413,7 @@ begin
       end;
       {$ELSE}
       var prevRow := _View[ViewRowIndex - 1];
-      treeRow.Top := prevRow.Top + prevRow.Height;
+      treeRow.Top := prevRow.Top + prevRow.GetHeight(CurrentPPI);
       {$ENDIF}
     end;
 
@@ -5447,7 +5459,7 @@ begin
       if contentSize.Height > rowHeight then
       begin
         rowHeight := contentSize.Height;
-        treeRow.Height := contentSize.Height;
+        treeRow.SetHeight(CurrentPPI, rowHeight);
       end;
       {$ENDIF}
 
@@ -5968,7 +5980,7 @@ begin
         rowClip := CRectangle.Create( ContentBounds.X,
                                       firstRow.Top,
                                       ContentBounds.Width,
-                                      lastRow.Top + lastRow.Height - firstRow.Top);
+                                      lastRow.Top + lastRow.GetHeight(CurrentPPI) - firstRow.Top);
 
         drawInfo.Graphics.IntersectClip(rowClip);
         PaintRows(drawInfo);
@@ -6110,7 +6122,7 @@ begin
     indent := TScaler.Scaled(cell.Style.Hierarchy.Indent, CurrentPPI);
 
     for i := rowIndex + 1 to rowIndex + childCount do
-      inc(rectHeight, _View[i].Height);
+      inc(rectHeight, _View[i].GetHeight(CurrentPPI));
 
     Points[0] := CPoint.Create(cellRect.X               , cellRect.Y);
     Points[1] := CPoint.Create(cellRect.Right - 1       , cellRect.Y);
@@ -6173,7 +6185,7 @@ begin
   cellRectangle := CRectangle.Create( layoutColumn.Left + cell.Indent + extraIndent,
                                       row.Top,
                                       layoutColumn.Width - cell.Indent - extraIndent,
-                                      row.Height);
+                                      row.GetHeight(CurrentPPI));
 
   // Append cells to the right
   for colspan := 1 to cell.Style.ColSpan - 1 do
@@ -6272,7 +6284,7 @@ begin
     Rectangle := CRectangle.Create( layoutColumns[0].Left, // ContentBounds.X,
                                     row.Top,
                                     _Layout.TotalWidth, // layoutColumn.Left + layoutColumn.Width,
-                                    row.Height);
+                                    row.GetHeight(CurrentPPI));
 
     Renderer.RenderBackground(  drawInfo.Graphics,
                                 row.Style,
@@ -6333,7 +6345,7 @@ begin
       Rectangle := CRectangle.Create( layoutColumns[0].Left, // ContentBounds.X,
                                       row.Top,
                                       _Layout.TotalWidth, // layoutColumn.Left + layoutColumn.Width,
-                                      row.Height);
+                                      row.GetHeight(CurrentPPI));
 
       Renderer.RenderBackground(  drawInfo.Graphics,
                                   row.Style.Dissabled,
@@ -6358,7 +6370,7 @@ begin
   if drawInfo.LastRow <> -1 then
   begin
     row := _View[drawInfo.LastRow];
-    y := row.Top + row.Height;
+    y := row.Top + row.GetHeight(CurrentPPI);
   end
   else if drawInfo.LastHeaderRow <> -1 then
   begin
@@ -11508,7 +11520,6 @@ begin
 end;
 
 { THeaderRowList }
-
 function THeaderRowList.get_Height: Integer;
 begin
   Result := _Height;
@@ -12251,10 +12262,20 @@ begin
   Result := _dataModelView as IList;
 end;
 
-function TTreeDataModelViewRowList.get_RowHeight(const DataRow: CObject): Integer;
+function TTreeDataModelViewRowList.GetRowHeight(const DataRow: CObject; const PPI: Integer): Integer;
 begin
-  Result := _RowHeights[DataRow];
+  Result := _RowHeights.GetRowHeight(DataRow, PPI);
 end;
+
+procedure TTreeDataModelViewRowList.SetRowHeight(const DataRow: CObject; const PPI: Integer; Value: Integer);
+begin
+  _RowHeights.SetRowHeight(DataRow, PPI, Value);
+end;
+
+//function TTreeDataModelViewRowList.get_RowHeight(const DataRow: CObject): Integer;
+//begin
+//  Result := _RowHeights[DataRow];
+//end;
 
 function TTreeDataModelViewRowList.get_TopRow: Integer;
 begin
@@ -12541,13 +12562,13 @@ begin
   inherited set_Item(Index, Value);
 end;
 
-procedure TTreeDataModelViewRowList.set_RowHeight(
-  const DataRow: CObject;
-  Value: Integer);
-begin
-//  Assert(Interfaces.Supports(DataRow, IDataRow));
-  _RowHeights[DataRow] := Value;
-end;
+//procedure TTreeDataModelViewRowList.set_RowHeight(
+//  const DataRow: CObject;
+//  Value: Integer);
+//begin
+////  Assert(Interfaces.Supports(DataRow, IDataRow));
+//  _RowHeights[DataRow] := Value;
+//end;
 
 function TTreeDataModelViewRowList.get_SortDescriptions: List<ITreeSortDescription>;
 var
@@ -13071,10 +13092,20 @@ begin
   end;
 end;
 
-function TTreeRow.get_Height: Integer;
+function TTreeRow.GetHeight(const PPI: Integer): Integer;
 begin
-  Result := _Owner.RowHeight[DataItem];
+  Result := _Owner.GetRowHeight(DataItem, PPI);
 end;
+
+procedure TTreeRow.SetHeight(const PPI: Integer; Value: Integer);
+begin
+  _Owner.SetRowHeight(DataItem, PPI, Value);
+end;
+
+//function TTreeRow.get_Height: Integer;
+//begin
+//  Result := _Owner.RowHeight[DataItem];
+//end;
 
 function TTreeRow.get_Index: Integer;
 begin
@@ -13141,10 +13172,10 @@ begin
   Result := _Owner.Level(Self);
 end;
 
-procedure TTreeRow.set_Height(Value: Integer);
-begin
-  _Owner.RowHeight[DataItem] := Value;
-end;
+//procedure TTreeRow.set_Height(Value: Integer);
+//begin
+//  _Owner.RowHeight[DataItem] := Value;
+//end;
 
 procedure TTreeRow.set_IsExpanded(Value: Boolean);
 begin
@@ -14146,7 +14177,7 @@ begin
   end;
 end;
 
-procedure TTreeRowList.RepositionTreeRows;
+procedure TTreeRowList.RepositionTreeRows(PPI: Integer);
 var
   i: Integer;
   n: Integer;
@@ -14160,13 +14191,13 @@ begin
   n := _treeControl.ContentBounds.Y + _treeControl.HeaderRows.Height;
   row.Top := n;
   row.Index := 0;
-  inc(n, row.Height);
+  inc(n, row.GetHeight(PPI));
   for i := 1 to BaseListCount - 1 do
   begin
     row := IBaseInterface(inherited get_Item(i)) as ITreeRow;
     row.Top := n;
     row.Index := i;
-    inc(n, row.Height);
+    inc(n, row.GetHeight(PPI));
   end;
 end;
 
@@ -14633,10 +14664,20 @@ begin
   Result := _data;
 end;
 
-function TTreeRowList.get_RowHeight(const DataRow: CObject): Integer;
+function TTreeRowList.GetRowHeight(const DataRow: CObject; const PPI: Integer): Integer;
 begin
-  Result := _RowHeights[DataRow];
+  Result := _RowHeights.GetRowHeight(DataRow, PPI);
 end;
+
+procedure TTreeRowList.SetRowHeight(const DataRow: CObject; const PPI: Integer; Value: Integer);
+begin
+  _RowHeights.SetRowHeight(DataRow, PPI, Value);
+end;
+
+//function TTreeRowList.get_RowHeight(const DataRow: CObject): Integer;
+//begin
+//  Result := _RowHeights[DataRow];
+//end;
 
 function TTreeRowList.get_TopRow: Integer;
 begin
@@ -14985,10 +15026,10 @@ begin
   inherited set_Item(Index, Value);
 end;
 
-procedure TTreeRowList.set_RowHeight(const DataRow: CObject; Value: Integer);
-begin
-  _RowHeights[DataRow] := Value;
-end;
+//procedure TTreeRowList.set_RowHeight(const DataRow: CObject; Value: Integer);
+//begin
+//  _RowHeights[DataRow] := Value;
+//end;
 
 function TTreeRowList.get_SortDescriptions: List<ITreeSortDescription>;
 begin
@@ -15073,15 +15114,25 @@ begin
   _dataRow := (Interfaces.ToInterface(ADataItem) as IDataRowView).Row;
 end;
 
-function TTreeDataModelViewRow.get_Height: Integer;
+function TTreeDataModelViewRow.GetHeight(const PPI: Integer): Integer;
 begin
-  Result := ITreeRowList(_Owner).RowHeight[_dataRow];
+  Result := _Owner.GetRowHeight(_dataRow, PPI);
 end;
 
-procedure TTreeDataModelViewRow.set_Height(Value: Integer);
+procedure TTreeDataModelViewRow.SetHeight(const PPI: Integer; Value: Integer);
 begin
-  ITreeRowList(_Owner).RowHeight[_dataRow] := Value;
+  _Owner.SetRowHeight(_dataRow, PPI, Value);
 end;
+
+//function TTreeDataModelViewRow.get_Height: Integer;
+//begin
+//  Result := ITreeRowList(_Owner).RowHeight[_dataRow];
+//end;
+//
+//procedure TTreeDataModelViewRow.set_Height(Value: Integer);
+//begin
+//  ITreeRowList(_Owner).RowHeight[_dataRow] := Value;
+//end;
 
 { TTreeLayoutColumnList }
 
