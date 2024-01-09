@@ -11,10 +11,10 @@ type
   public
     class function Scaled(aValue: Integer; PPI: Integer): Integer; overload;
     class function Scaled(aValue: Single; PPI: Integer): Single; overload;
-    class function ScaledBack(aValue: Integer; PPI :Integer) :Integer; overload;
+    class function ScaledBack(aValue: Integer; PPI :Integer): Integer; overload;
     class function ScaledBack(aValue: Single; PPI :Integer): Single; overload;
-    class function Twips2Pixels(twips :integer; PPI :integer) :Integer;           overload;
-    class function Twips2Pixels(const twips :CSize; PPIX, PPIY :integer) :CSize;  overload;
+    class function Twips2Pixels(twips: Integer; PPI: Integer): Integer;           overload;
+    class function Twips2Pixels(const twips: CSize; PPIX, PPIY:integer): CSize;  overload;
     class function ControlDefaultHeight(PPI: Integer): Integer;
   end;
 
@@ -30,21 +30,21 @@ begin
     Result := Scaled(24, PPI);
 end;
 
-class function TSCaler.Scaled(aValue: Integer; PPI: Integer) :Integer;
+class function TSCaler.Scaled(aValue: Integer; PPI: Integer): Integer;
 begin
   if PPI = DefaultPPI then
     Result := aValue else
     Result := MulDiv(aValue, PPI, DefaultPPI)
 end;
 
-class function TSCaler.Scaled(aValue :single; PPI :Integer) :single;
+class function TSCaler.Scaled(aValue: Single; PPI: Integer) : Single;
 begin
   if PPI = DefaultPPI then
     Result := aValue else
     Result := aValue * (PPI /DefaultPPI)
 end;
 
-class function TSCaler.ScaledBack(aValue :Integer; PPI :Integer) :Integer;
+class function TSCaler.ScaledBack(aValue: Integer; PPI: Integer): Integer;
 begin
   if PPI = DefaultPPI then
     Result := aValue else
@@ -58,12 +58,12 @@ begin
     Result := aValue * (DefaultPPI / PPI);
 end;
 
-class function TScaler.Twips2Pixels(twips :integer; PPI :integer) :Integer;
+class function TScaler.Twips2Pixels(twips: Integer; PPI: Integer): Integer;
 begin
   Result := MulDiv(twips, PPI, TwipsPerInch);
 end;
 
-class function TScaler.Twips2Pixels(const twips :CSize; PPIX, PPIY :integer) :CSize;
+class function TScaler.Twips2Pixels(const twips: CSize; PPIX, PPIY : Integer): CSize;
 begin
   Result := CSize.Create(Twips2Pixels(twips.Width, PPIX), Twips2Pixels(twips.Height, PPIY));
 end;

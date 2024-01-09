@@ -1,5 +1,7 @@
 # Delphi compiler-generated binaries (safe to delete)
 *.dcu
+*.exe
+*.rsm
 
 # Delphi local files (user-specific info)
 *.local
@@ -7,6 +9,7 @@
 *.projdata
 *.tvsconfig
 *.dsk
+*.vlb
 
 # Delphi history and backups
 __history/

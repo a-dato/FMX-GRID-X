@@ -1352,7 +1352,6 @@ type
     procedure CollapseButtonClicked(Sender: TObject);
     procedure ExpandButtonClicked(Sender: TObject);
     procedure UpdateRowExpandedState(Sender: TObject; AExpandRow: Boolean);
-    procedure DoEnter; override;
     procedure DoExit; override;
 
     procedure KeyDown(var Key: Word; var KeyChar: WideChar; Shift: TShiftState); override;
@@ -1535,8 +1534,8 @@ type
     procedure EditorButtonClicked(const Sender: ICellEditor;
                                   const Button: ICellImage);
                                   // e: MouseEventArgs); virtual;
-    procedure EditorCancel; // overload; virtual;
-    procedure EditorEnd(const SaveData: Boolean = True); //overload; virtual; // use EndEdit
+    procedure EditorCancel;
+    procedure EditorEnd(const SaveData: Boolean = True);
     procedure EditorLeave(const Sender: ICellEditor; e: EventArgs);  virtual;
     function  EditorParseValue(const Sender: ICellEditor; var AValue: CObject): Boolean;
 
@@ -1613,7 +1612,7 @@ type
     function  BeginEdit: Boolean; virtual;
     function  BeginRowEdit(const Row: ITreeRow): Boolean; virtual;
     procedure InternalBeginEdit(const Item: CObject);
-    function  EndEdit(const SaveData: Boolean = True): Boolean; // virtual;
+    function  EndEdit(const SaveData: Boolean = True): Boolean; // use EditorEnd
     function  EndRowEdit(const Row: ITreeRow): Boolean; overload; virtual;
     procedure CancelEdit; virtual;
     procedure ClearActiveCell; virtual;
@@ -1760,8 +1759,8 @@ type
     // Only for hierarchy mode (DataModelView). Affects Row.IsExpanded, View.IsExpanded(Row)
   end;
 
-  TFMXTreeControl = {$IFDEF DOTNET}public{$ENDIF} class(TCustomTreeControl)
   [ComponentPlatformsAttribute(pidAllPlatforms)]
+  TFMXTreeControl = {$IFDEF DOTNET}public{$ENDIF} class(TCustomTreeControl)
   published
     property AcceptsTab;
     property AcceptsReturn;
@@ -3486,7 +3485,7 @@ begin
   if Assigned(_EndEdit) then
   begin
     AutoObject.Guard(EndEditEventArgs.Create(ACell, nil, Value, View.EditItem),  endEditArgs);
-//    endEditArgs.EndRowEdit := EndRowEdit;
+    endEditArgs.EndRowEdit := EndRowEdit;
 
     _EndEdit(Self, endEditArgs);
 
@@ -4805,7 +4804,7 @@ begin
   if _View = nil then
     Exit(False);
 
-  EndEdit;
+  EditorEnd; //EndEdit;
 
   if _listComparer <> nil then
     _listComparer.ResetSortedRows(False);
@@ -5765,7 +5764,11 @@ begin
     // Stop editing when Tree scrolls vertically
 //    if IsEditing then
 //      _editor.EndEdit(True);
-    EndEdit;
+
+// It does NOT trigger when user scrolls vertically. Alex.
+
+    if IsEditing then
+      EditorEnd(True);
 
     TopRow := Value;
   end;
@@ -6999,12 +7002,14 @@ begin
     begin
       //this will trigger SelectCell > EndEdit in a Tree, EndEdit will be triggered only in case if RowIndex or ColumnIndex were changed
       // Fixing: when user is pressing UP\Down in editor -do not send KeyDown event to the main KeyDownEvent,
-      // cursor shouldmove in Editor (e.g. multiline)
+      // cursor should move in Editor (e.g. multiline)
       KeyDown(Key, KeyChar, Shift);
 
       Key := 0;
     end; }
 
+    {$Message hint 'Code below creates a bug'}
+// in case if user uses MULTILINE EDITOR, he cannot move inside an editor with UP\DOWN keys, because this will close it. Alex
     vkUp, vkDown, vkTab:
     begin
       var storedKey := Key;
@@ -7012,7 +7017,7 @@ begin
 
       Key := 0;
       TThread.ForceQueue(nil, procedure begin
-        EndEdit;
+        EditorEnd(True); //EndEdit;
         KeyDown(storedKey, storedChar, Shift);
       end);
     end;
@@ -7025,7 +7030,7 @@ begin
         TDropDownEditor(_editor).SaveData := False;
 
       TThread.ForceQueue(nil, procedure begin
-        EndEdit(False); // SaveData = False
+         EditorEnd(False); //EndEdit(False);
       end);
     end;
 
@@ -7033,7 +7038,8 @@ begin
     begin
       // Need to call EndEdit here, because RowIndex or ColumnIndex were not changed and SelectCell will not not call EndEdit
       TThread.ForceQueue(nil, procedure begin
-        EndEdit;
+       // EndEdit;
+        EditorEnd(True);
       end);
 
 //      Key := 0;
@@ -7148,7 +7154,6 @@ begin
 end;
 
 procedure TCustomTreeControl.EditorEnd(const SaveData: Boolean = True);
- // use EndEdit
 var
   treeCell: ITreeCell;
   value: CObject;
@@ -7269,8 +7274,10 @@ begin
   // Fix: while editing a cell click on other row = AV.
   // Do not call EndEdit in TCustomDateTimeEdit.DoExit; because EndEdit may call a destructor of the editor control
   // (because of reference 0 - _editor := nil).
+
   if IsEditing then
-    EndEdit;
+    EditorEnd(True); //EndEdit;
+  // User is editing now and clicked outside of the Editor - close Editor and save data
 
   // This will detect current Row and current Cell (Column) in HitInfo. Tree will apply it in MouseUp.
   _MouseDownHitInfo := GetHitInfo(X, Y);
@@ -8297,6 +8304,20 @@ begin
   end;
 end;
 
+procedure TCustomTreeControl.ViewportPositionChange(const OldViewportPosition, NewViewportPosition: TPointF; const ContentSizeChanged: boolean);
+begin
+  // sometimes same
+  if OldViewportPosition = NewViewportPosition then exit;
+
+  inherited;
+
+  if OldViewportPosition.Y <> NewViewportPosition.Y then
+    if _editor <> nil then
+      EditorEnd(True {Save data});
+
+  AfterViewPortPositionChanged(OldViewportPosition, NewViewportPosition);
+end;
+
 procedure TCustomTreeControl.AfterViewPortPositionChanged(const OldViewportPosition, NewViewportPosition: TPointF);
 
   procedure ScrollHeadersHorizontally;
@@ -8357,16 +8378,6 @@ begin
 //      EndUpdate;
 //    end;
   end;
-end;
-
-procedure TCustomTreeControl.ViewportPositionChange(const OldViewportPosition, NewViewportPosition: TPointF; const ContentSizeChanged: boolean);
-begin
-  // sometimes same
-  if OldViewportPosition = NewViewportPosition then exit;
-
-  inherited;
-
-  AfterViewPortPositionChanged(OldViewportPosition, NewViewportPosition);
 end;
 
 procedure TCustomTreeControl.HScrollChange;
@@ -8556,25 +8567,22 @@ begin
 
 end;
 
-procedure TCustomTreeControl.DoEnter;
-begin
-  inherited;
-
- // Tree often calls refresh, but this flag does not refresh Tree (unlike Datachanged). Not sure if we need it in the current version
-//  if not (TreeOption.HideFocusRectangle in _Options) or not AlwaysShowFocus then
-//    RefreshControl([TreeState.Refresh]);
-end;
-
 procedure TCustomTreeControl.DoExit;
 begin
   inherited;
 
-  if not _insideEndEdit and not IsEditing and (TreeOption.AutoCommit in _Options) and (Current >= 0) then
-    EndEdit;
+  {Mutually exclusive code (it does not work): }
+//
+//  if not _insideEndEdit and NOT IsEditing then
+//    if (TreeOption.AutoCommit in _Options) and (Current >= 0) then
+//      EditorEnd(True); //EndEdit;
 
- // Tree often calls refresh, but this flag does not refresh Tree (unlike Datachanged). Not sure if we need it in the current version
-//  if not (TreeOption.HideFocusRectangle in _Options) or not AlwaysShowFocus then
-//    RefreshControl([TreeState.Refresh]);
+ {if it is (NOT IsEditing) - then Editor = nil, does not exist, so do not need to hide it.
+  Similar non working code is in VCL TCustomTreeControl.OnLostFocus.
+  Note, if I remove "NOT" - editor will be always invisible, because Tree already lost focus (focus is in Editor) > DoExit > Hide Editor.
+
+  Note2: if you need to hide Editor when Tree lost focus we need to do it in DoExit of Editor control.
+  See also in VCL: set breakpoint in "// If application wants editing to stop" in VCL tree unit. Alex. }
 end;
 
 
@@ -10986,9 +10994,10 @@ begin
   Result := TFMXTreeControl(_Control);
 end;
 
+// this method is inactive
 procedure TTreeDataModelViewRowList.TopRowChanged(const Sender: IBaseInterface; Args: RowChangedEventArgs);
 begin
-  TFMXTreeControl(_Control).EndEdit;
+  TFMXTreeControl(_Control).EditorEnd(True); //EndEdit;
 end;
 
 {$ENDREGION}

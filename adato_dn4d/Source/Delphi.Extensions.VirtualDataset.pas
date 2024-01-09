@@ -62,23 +62,22 @@ type
   end;
 
   { TADBlobStream }
-  TADBlobStream = class(TMemoryStream)
+  TADBlobStream = class(TBytesStream)
   private
-    FField: TBlobField;
+    FField: TField;
     FDataSet: TCustomVirtualDataset;
-    FBuffer: TRecBuf;
-    FFieldNo: Integer;
     FModified: Boolean;
-    FData: Variant;
-    FFieldData: Variant;
+
   protected
     procedure ReadBlobData;
-    function Realloc(var NewCapacity: NativeInt): Pointer; override;
+    // function Realloc(var NewCapacity: NativeInt): Pointer; override;
   public
-    constructor Create(Field: TBlobField; Mode: TBlobStreamMode);
+    constructor Create(Field: TField; Mode: TBlobStreamMode);
     destructor Destroy; override;
+    {$IF Sizeof(LongInt) <> Sizeof(NativeInt)}
     function Write(const Buffer; Count: Longint): Longint; override;
-    procedure Truncate;
+    {$ENDIF Sizeof(LongInt) <> Sizeof(NativeInt)}
+    function Write(const Buffer; Count: TNativeCount): TNativeCount; override;
   end;
 
   TVirtualMasterDataLink = class(TMasterDataLink)
@@ -270,7 +269,6 @@ procedure VirtualDatasetErrorFmt(const Message: string;
 implementation
 
 uses
-  //{$IFNDEF NEXTGEN}Data.Win.ADOConst, ActiveX, Windows, BitConverter, System.WideStrUtils, {$ENDIF}
   Variants,
   DbConsts,
   FMTBcd,
@@ -284,7 +282,7 @@ var
 begin
   Result := 0;
   for I := 0 to Dataset.Fields.Count - 1 do
-    Result := Result + (Integer(Dataset.Fields[I]) shr (I mod 16));
+    Result := Integer(Dataset.Fields[I]) xor Result;
 end;
 
 procedure VirtualDatasetError(const Message: string;
@@ -303,131 +301,105 @@ begin
 end;
 
 { TADBlobStream }
-constructor TADBlobStream.Create(Field: TBlobField; Mode: TBlobStreamMode);
+constructor TADBlobStream.Create(Field: TField; Mode: TBlobStreamMode);
 begin
+  inherited Create;
+
   FField := Field;
-  FFieldNo := FField.FieldNo - 1;
   FDataSet := FField.Dataset as TCustomVirtualDataset;
-  FFieldData := Null;
-  FData := Null;
-  if not FDataSet.GetActiveRecBuf(FBuffer) then
-    Exit;
+
   if Mode <> bmRead then
   begin
     if FField.ReadOnly then
       DatabaseErrorFmt(SFieldReadOnly, [FField.DisplayName], FDataSet);
     if not(FDataSet.State in [dsEdit, dsInsert]) then
       DatabaseError(SNotEditing, FDataSet);
-  end;
-  if Mode = bmWrite then
-    Truncate
-  else
+  end else
     ReadBlobData;
+
+  FModified := False;
 end;
 
 destructor TADBlobStream.Destroy;
 begin
   if FModified then
-    try
-      raise Exception.Create('FDataSet.SetFieldData must be fixed');
-      // FDataSet.SetFieldData(FField, @FData);
-      FField.Modified := True;
-      FDataSet.DataEvent(deFieldChange, NativeInt(FField));
-    except
-      ApplicationHandleException(Self);
-    end;
+  try
+    if FField.DataType = ftWideMemo then
+    begin
+      var v: Variant := TEncoding.Unicode.GetString(Bytes, 0, Size);
+
+      // vb Must hold a pointer to a Variant
+      var vb: TValueBuffer;
+      SetLength(vb, SizeOf(PVariant));
+      PVariant(vb) := @v;
+
+      FDataSet.SetFieldData(FField, vb);
+    end else
+      raise Exception.Create('Field type not supported');
+
+    if FField is TBlobField then
+      TBlobField(FField).Modified := True;
+
+    FDataSet.DataEvent(deFieldChange, NativeInt(FField));
+  except
+    ApplicationHandleException(Self);
+  end;
+
   inherited Destroy;
 end;
 
 procedure TADBlobStream.ReadBlobData;
 begin
-  raise Exception.Create('FDataSet.GetFieldData must be fixed');
-  // FDataSet.GetFieldData(FField, @FFieldData, True);
-  if not VarIsNull(FFieldData) then
+  if FField.DataType in [ftBlob..ftTypedBinary, ftVariant, ftWideMemo] then
   begin
-    if VarType(FFieldData) = varOleStr then
+    var vb: TValueBuffer;
+    SetLength(vb, SizeOf(Variant));
+    FDataSet.GetFieldData(FField, vb, True);
+
+    var v: PVariant := PVariant(vb);
+
+    if not VarIsNull(v^) then
     begin
-      if FField.BlobType = ftWideMemo then
-        Size := Length(WideString(FFieldData)) * sizeof(widechar)
-      else
+      var vd := FindVarData(v^);
+
+      if vd.VType = varOleStr then
       begin
-        { Convert OleStr into a pascal string (format used by TBlobField) }
-        FFieldData := AnsiString(FFieldData);
-        Size := Length(FFieldData);
+        var i := Length(vd.VOleStr);
+        if FField.DataType = ftWideMemo then
+          i := i * sizeof(widechar);
+
+        Write(vd.VOleStr[0], i);
+        Position := 0;
+      end else
+      begin
+        var s := VarArrayHighBound(v^, 1) + 1;
+        inherited Write(vd.VPointer, s);
       end;
-    end
-    else
-      Size := VarArrayHighBound(FFieldData, 1) + 1;
-    FFieldData := Null;
-  end;
-end;
 
-function TADBlobStream.Realloc(var NewCapacity: NativeInt): Pointer;
-
-  procedure VarAlloc(var V: Variant; Field: TFieldType);
-  var
-    W: WideString;
-    S: AnsiString;
-  begin
-    if Field = ftMemo then
-    begin
-      if not VarIsNull(V) then
-        S := AnsiString(V);
-      SetLength(S, NewCapacity);
-      V := S;
-    end
-    else if Field = ftWideMemo then
-    begin
-      if not VarIsNull(V) then
-        W := WideString(V);
-      SetLength(W, NewCapacity div 2);
-      V := W;
-    end
-    else
-    begin
-      if VarIsClear(V) or VarIsNull(V) then
-        V := VarArrayCreate([0, NewCapacity - 1], varByte)
-      else
-        VarArrayRedim(V, NewCapacity - 1);
-    end;
-  end;
-
-begin
-  Result := Memory;
-  if NewCapacity <> Capacity then
-  begin
-    if VarIsArray(FData) then
-      VarArrayUnlock(FData);
-    if NewCapacity = 0 then
-    begin
-      FData := Null;
-      Result := nil;
-    end
-    else
-    begin
-      if VarIsNull(FFieldData) then
-        VarAlloc(FData, FField.DataType)
-      else
-        FData := FFieldData;
-      if VarIsArray(FData) then
-        Result := VarArrayLock(FData)
-      else
-        Result := TVarData(FData).VString;
+      VarClear(v^);
     end;
   end;
 end;
 
+{$IF Sizeof(LongInt) <> Sizeof(NativeInt)}
 function TADBlobStream.Write(const Buffer; Count: Longint): Longint;
 begin
   Result := inherited Write(Buffer, Count);
   FModified := True;
 end;
+{$ENDIF Sizeof(LongInt) <> Sizeof(NativeInt)}
 
-procedure TADBlobStream.Truncate;
+function TADBlobStream.Write(const Buffer; Count: TNativeCount): TNativeCount;
 begin
-  Clear;
+  Result := inherited Write(Buffer, Count);
   FModified := True;
 end;
+
+//procedure TADBlobStream.Truncate;
+//begin
+//  Clear;
+//  FModified := True;
+//end;
 
 // =---------------------------------------------------------------------------=
 // TEzVirtualMasterDataLink
@@ -526,11 +498,7 @@ end;
 
 function TCustomVirtualDataset.CreateBlobStream(Field: TField; Mode: TBlobStreamMode): TStream;
 begin
-  {$IFDEF RELEASE}
-  {$IFNDEF SUPERAPP}
-  Result := TADBlobStream.Create(Field as TBlobField, Mode);
-  {$ENDIF}
-  {$ENDIF}
+  Result := TADBlobStream.Create(Field, Mode);
 end;
 
 procedure TCustomVirtualDataset.DataEvent(Event: TDataEvent; Info: NativeInt);
@@ -674,37 +642,37 @@ var
         TDBBitConverter.UnsafeFrom<Double>(TVarData(Data).VDouble, Buffer);
       ftFMTBCD:
         TDBBitConverter.UnsafeFrom<TBcd>(VarToBcd(Data), Buffer);
-//      ftBCD:
-//        BCDToCurr(PBcd(ABuffer)^, crVal);
-//        PCurrency(pBuff + 1)^ := crVal;
+  //      ftBCD:
+  //        BCDToCurr(PBcd(ABuffer)^, crVal);
+  //        PCurrency(pBuff + 1)^ := crVal;
 
-//        TDBBitConverter.UnsafeFrom<Currency>(C, Buffer);
-//
-//        if tagVariant(Data).vt = VT_CY then
-//          CurrToBuffer(tagVariant(Data).cyVal)
-//        else
-//          CurrToBuffer(Data);
+  //        TDBBitConverter.UnsafeFrom<Currency>(C, Buffer);
+  //
+  //        if tagVariant(Data).vt = VT_CY then
+  //          CurrToBuffer(tagVariant(Data).cyVal)
+  //        else
+  //          CurrToBuffer(Data);
       ftBoolean:
         TDBBitConverter.UnsafeFrom<WordBool>(TVarData(Data).VBoolean, Buffer);
       ftDate, ftTime, ftDateTime:
         PDateTimeRec(Buffer)^.DateTime := TimeStampToMSecs(DateTimeToTimeStamp(TVarData(Data).VDate));
 
-//      ftBytes, ftVarBytes:
-//        if NativeFormat then
-//        begin
-//          PData := VarArrayLock(Data);
-//          try
-//            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
-//          finally
-//            VarArrayUnlock(Data);
-//          end;
-//        end
-//        else
-//        begin
-//          if VarIsArray(Data) then
-//            SetLength(Buffer, VarArrayHighBound(Data, 1) + 1);
-//          TDBBitConverter.UnsafeFromVariant(Data, Buffer);
-//        end;
+  //      ftBytes, ftVarBytes:
+  //        if NativeFormat then
+  //        begin
+  //          PData := VarArrayLock(Data);
+  //          try
+  //            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+  //          finally
+  //            VarArrayUnlock(Data);
+  //          end;
+  //        end
+  //        else
+  //        begin
+  //          if VarIsArray(Data) then
+  //            SetLength(Buffer, VarArrayHighBound(Data, 1) + 1);
+  //          TDBBitConverter.UnsafeFromVariant(Data, Buffer);
+  //        end;
       ftInterface:
         begin
           TempBuff := BytesOf(@Data, SizeOf(IUnknown));
@@ -781,7 +749,6 @@ begin
 
   Result := not VarIsNull(Data);
   if Result and (Buffer <> nil) then
-    // VariantToBuffer_x(Field, Data, Buffer, NativeFormat);
     VarToBuffer;
 end;
 
