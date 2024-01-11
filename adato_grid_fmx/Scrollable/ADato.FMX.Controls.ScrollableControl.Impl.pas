@@ -136,6 +136,7 @@ type
     function CreateScrollContent: TScrollContent; override;
     function IsVerticalBoundsAnimationWorkingNow: Boolean; //inline; // at current time user is dragging a scrollbox out of borders
     function GetStyleObject: TFmxObject; override;
+    function GetCurrentPackageHInst: HINST;  virtual;
     function FindStyleResourceBase<T1: TFmxObject>(const AStyleName: string; AClone: Boolean;
       out AStyleObject: T1): Boolean; // virtual; "Virtual methods cannot have type parameters" (with <T>).)
     procedure FreeStyle; override;
@@ -164,7 +165,6 @@ type
   end;
 
 implementation
-
 
 { TOwnerStyledPanel }
 
@@ -354,7 +354,7 @@ begin
   begin
     var controlStyleName := GetDefaultStyleLookupName;
 
-     var styleResource := TStyleStreaming.LoadFromResource(HInstance, controlStyleName, RT_RCDATA);
+     var styleResource := TStyleStreaming.LoadFromResource(GetCurrentPackageHInst, controlStyleName, RT_RCDATA);
      if styleResource <> nil then
      try
        // load full style for the control (e.g. 'FMXTreeControlstyle')
@@ -375,6 +375,23 @@ end;
 function TScrollableControl.GetCB: TRectF;
 begin
   Result := _contentBounds;
+end;
+
+function TScrollableControl.GetCurrentPackageHInst: HINST;
+{ Workaround for issue:
+
+  In design time only, RAD shows error "Resource FMXGantt(Timebar)ControlStyle not loaded", sometimes form with Gantt
+  is failed to load at all. This happens after the Tree was restructured.
+  Tree with ADato.FMX.Controls.ScrollableControl.Impl.pas were moved into separate package ADato.Grid.FMX.dpk.
+  Gantt and Timebar left in old package.
+  When in design time RAD is loading a Gantt\Timebar components, it calls TScrollableControl.GetStyleObject from the parent
+  class, which is located in ADato.FMX.Controls.ScrollableControl.Impl.pas (ADato.Grid.FMX.dpk package).
+
+  This unit calls TStyleStreaming.LoadFromResource(HInstance..; with HInstance: HINST of the current package.
+  The package ADato.Grid.FMX.dpk does not have resources of Gantt and Timebar.
+  That's why use this function to get proper handle of the Package. Gantt and Timebar overrides it.}
+begin
+  Result := HInstance;
 end;
 
 function TScrollableControl.GetVPMax: Single;
