@@ -659,9 +659,12 @@ var
 
       ftBytes, ftVarBytes:
       begin
-        if VarIsArray(Data) then
-          SetLength(Buffer, VarArrayHighBound(Data, 1) + 1);
-        TDBBitConverter.UnsafeFromVariant(Data, Buffer);
+        var PData := VarArrayLock(Data);
+        try
+          DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+        finally
+          VarArrayUnlock(Data);
+        end;
       end;
 
       ftInterface:
