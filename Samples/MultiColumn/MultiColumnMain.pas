@@ -40,7 +40,6 @@ type
     lblLocation: TLabel;
     edFounded: TDateEdit;
     Founded: TLabel;
-    procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FMXTreeControl1EditStart(const Sender: TObject; e:
         StartEditEventArgs);
@@ -97,11 +96,6 @@ uses
   ADato.Data.DataModel.impl, ADato.InsertPosition;
 
 {$R *.fmx}
-
-procedure TForm1.Button1Click(Sender: TObject);
-begin
-  FMXTreeControl1.Data := CreateCompanyList;
-end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
