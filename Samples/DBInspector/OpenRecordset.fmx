@@ -1,0 +1,218 @@
+object OpenRecordSetFrame: TOpenRecordSetFrame
+  Size.Width = 856.000000000000000000
+  Size.Height = 547.000000000000000000
+  Size.PlatformDefault = False
+  object SqlQuery: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Align = Top
+    Position.Y = 33.000000000000000000
+    Size.Width = 856.000000000000000000
+    Size.Height = 80.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 852.000000000000000000
+    Viewport.Height = 76.000000000000000000
+  end
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 856.000000000000000000
+    Size.Height = 33.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object SpeedButton1: TSpeedButton
+      Action = Execute
+      Align = Left
+      ImageIndex = -1
+      Size.Width = 33.000000000000000000
+      Size.Height = 33.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'playtoolbutton'
+      TextSettings.Trimming = None
+    end
+    object Button1: TButton
+      Action = acAbort
+      Align = Left
+      ImageIndex = -1
+      Margins.Left = 6.000000000000000000
+      Margins.Top = 6.000000000000000000
+      Margins.Bottom = 6.000000000000000000
+      Position.X = 63.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 80.000000000000000000
+      Size.Height = 21.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      TextSettings.Trimming = None
+    end
+    object SpeedButton2: TSpeedButton
+      Action = acNextRecordSet
+      Align = Left
+      ImageIndex = -1
+      Position.X = 33.000000000000000000
+      Scale.X = 0.800000011920929000
+      Scale.Y = 0.800000011920929000
+      Size.Width = 30.000000000000000000
+      Size.Height = 41.250000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'escapetoolbutton'
+      TextSettings.Trimming = None
+    end
+    object lblConnection: TLabel
+      Align = Right
+      Margins.Right = 8.000000000000000000
+      Position.X = 536.000000000000000000
+      Size.Width = 312.000000000000000000
+      Size.Height = 33.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Trailing
+      TextSettings.Trimming = None
+      Text = 'Connection: None'
+      TabOrder = 10
+    end
+    object cbRecordCount: TComboBox
+      Align = Left
+      Items.Strings = (
+        '10'
+        '100'
+        '1000'
+        '10000'
+        '<all>')
+      ItemIndex = 1
+      Margins.Left = 8.000000000000000000
+      Position.X = 221.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 33.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 11
+    end
+    object Label1: TLabel
+      Align = Left
+      Position.X = 143.000000000000000000
+      Size.Width = 70.000000000000000000
+      Size.Height = 33.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Trailing
+      TextSettings.Trimming = None
+      Text = 'Records'
+      TabOrder = 13
+    end
+  end
+  object splitSqlSourcePanel: TSplitter
+    Align = Top
+    Cursor = crVSplit
+    MinSize = 20.000000000000000000
+    Position.Y = 113.000000000000000000
+    Size.Width = 856.000000000000000000
+    Size.Height = 5.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Logging: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    ShowScrollBars = False
+    Align = Bottom
+    Position.Y = 496.000000000000000000
+    Size.Width = 856.000000000000000000
+    Size.Height = 51.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Viewport.Width = 852.000000000000000000
+    Viewport.Height = 47.000000000000000000
+  end
+  object lyDataPanel: TLayout
+    Align = Client
+    Size.Width = 856.000000000000000000
+    Size.Height = 378.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 14
+    object DataGrid: TFMXTreeControl
+      Align = Client
+      Size.Width = 856.000000000000000000
+      Size.Height = 333.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      AcceptsTab = False
+      AcceptsReturn = False
+      AllowUserToAddRows = True
+      AllowUserToDeleteRows = True
+      AutoFitColumns = False
+      Indent = 20
+      AlwaysShowFocus = False
+      IncrementalSearch = False
+      Options = [TreeOption_ShowHeaders, TreeOption_AutoCommit, TreeOption_AllowCellSelection, TreeOption_AlternatingRowBackground, TreeOption_ShowDragImage, TreeOption_CheckPropertyNames, TreeOption_MultiSelect, TreeOption_GoRowFocusRectangle, TreeOption_ColumnsCanResize, TreeOption_ColumnsCanMove, TreeOption_RefreshOnEndEdit]
+      ScrollPerRow = False
+      DefaultExpandRows = False
+      HighlightRows = True
+      Viewport.Width = 854.000000000000000000
+      Viewport.Height = 306.000000000000000000
+    end
+    object DataEditor: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      Align = Bottom
+      Position.Y = 338.000000000000000000
+      Size.Width = 856.000000000000000000
+      Size.Height = 40.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Viewport.Width = 852.000000000000000000
+      Viewport.Height = 36.000000000000000000
+    end
+    object Splitter2: TSplitter
+      Align = Bottom
+      Cursor = crVSplit
+      MinSize = 20.000000000000000000
+      Position.Y = 333.000000000000000000
+      Size.Width = 856.000000000000000000
+      Size.Height = 5.000000000000000000
+      Size.PlatformDefault = False
+    end
+  end
+  object fdConnection: TFDConnection
+    Left = 88
+    Top = 136
+  end
+  object TheQuery: TFDQuery
+    Connection = fdConnection
+    FetchOptions.AssignedValues = [evRecsMax]
+    FetchOptions.RecsMax = 10
+    ResourceOptions.AssignedValues = [rvCmdExecMode]
+    Left = 184
+    Top = 136
+  end
+  object DataSource1: TDataSource
+    DataSet = TheQuery
+    Left = 256
+    Top = 136
+  end
+  object ActionList1: TActionList
+    Left = 488
+    Top = 137
+    object Execute: TAction
+      Text = 'Execute'
+      Hint = 'Execute'
+      ShortCut = 120
+      OnExecute = ExecuteExecute
+    end
+    object acAbort: TAction
+      Text = 'Abort'
+      OnExecute = acAbortExecute
+    end
+    object acNextRecordSet: TAction
+      Text = 'Next'
+      Hint = 'Open next record set'
+      ShortCut = 119
+      OnExecute = acNextRecordSetExecute
+    end
+  end
+  object DatasetDataModel1: TDatasetDataModel
+    DataLinks = <
+      item
+        DataSource = DataSource1
+      end>
+    Left = 376
+    Top = 137
+    DataModel = '<DataModel><Columns/></DataModel>'#13#10
+  end
+end

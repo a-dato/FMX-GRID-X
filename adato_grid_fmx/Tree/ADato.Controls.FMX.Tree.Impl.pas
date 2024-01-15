@@ -7010,6 +7010,7 @@ begin
       var storedChar := KeyChar;
 
       Key := 0;
+
       TThread.ForceQueue(nil, procedure begin
         EditorEnd(True); //EndEdit;
         KeyDown(storedKey, storedChar, Shift);

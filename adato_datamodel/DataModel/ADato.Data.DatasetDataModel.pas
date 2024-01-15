@@ -605,10 +605,6 @@ begin
 end;
 
 procedure TDatasetLink.RelocateDataset(Row: IDataRow);
-var
-  KeyValue: Variant;
-  Locate: TLocateRecordEvent;
-
 begin
   if FSyncedWith = Row then Exit;
 
@@ -616,22 +612,38 @@ begin
 
   if Assigned(Collection) then
   begin
-    Locate := (Collection as TDatasetLinkCollection).Dataset.OnRelocateDataLink;
-    if Assigned(Locate) then
+    var relocate := (Collection as TDatasetLinkCollection).Dataset.OnRelocateDataLink;
+    if Assigned(relocate) then
     begin
-      Locate(Self, Row.Data);
+      relocate(Self, Row.Data);
       FSyncedWith := Row;
       Exit;
     end;
   end;
 
-  if Dataset.SelfReferencing then
-    KeyValue := Variant(Row.Data) else
-    KeyValue := Variant((Interfaces.ToInterface(Row.Data) as IMasterDetailKey).Key);
+  // Locate using Field = Key?
+  if FKeyField <> '' then
+  begin
+    var keyValue: Variant;
 
-  if DetailDataset.Locate(KeyField, KeyValue, []) then
-    FSyncedWith := Row else
-    EzDatasetError(CString.Format(ADatoResources.LocateFailed, DetailDataset.Name, Row.Data), Dataset);
+    if Dataset.SelfReferencing then
+      KeyValue := Row.Data.AsType<Variant> else
+      KeyValue := Row.Data.AsType<IMasterDetailKey>.Key.AsType<Variant>;
+
+    if DetailDataset.Locate(KeyField, KeyValue, []) then
+      FSyncedWith := Row else
+      EzDatasetError(CString.Format(ADatoResources.LocateFailed, DetailDataset.Name, Row.Data), Dataset);
+  end
+  else
+  begin
+    var bm: TBookmark;
+
+    if Dataset.SelfReferencing then
+      bm := Row.Data.AsType<TBookmark> else
+      bm := Row.Data.AsType<IMasterDetailKey>.Key.AsType<TBookmark>;
+
+    DetailDataset.GotoBookmark(bm);
+  end;
 end;
 
 function TDatasetLink.GetDataSource: TDataSource;
@@ -966,8 +978,11 @@ var
       begin
         _detailField.Value := _fieldData[_field.Index];
 
-        _KeyUpdated := _KeyUpdated or (Pos(_detailField.FieldName, _datalink.KeyField) <> 0);
-        _ParentKeyUpdated := _ParentKeyUpdated or (Pos(_detailField.FieldName, _datalink.ParentRefField) <> 0);
+        if _datalink.KeyField <> '' then
+        begin
+          _KeyUpdated := _KeyUpdated or (Pos(_detailField.FieldName, _datalink.KeyField) <> 0);
+          _ParentKeyUpdated := _ParentKeyUpdated or (Pos(_detailField.FieldName, _datalink.ParentRefField) <> 0);
+        end;
       end;
     end;
   end;
@@ -1019,10 +1034,13 @@ var
     if VarIsNull(v) then
       EzDatasetError(ADatoResources.NoKey, Self);
 
-    if SelfReferencing then
-      Row.Data := v;
-      Row.Data := MasterDetailKey.Create(_row.Level, v) as IBaseInterface;
+    var key: CObject;
 
+    if SelfReferencing then
+      key := v;
+      key := CObject.From<IMasterDetailKey>(MasterDetailKey.Create(_row.Level, v));
+
+    Row.Data := key;
     _mediator.Keys.Add(Row.Data, Row);
   end;
 
@@ -1392,71 +1410,68 @@ var
 
   procedure LoadDatalink(ALevel: Integer);
   var
-    _link           : TDatasetLink;
-    _dataset        : TDataset;
-    _key            : CObject;
-    _parentKey      : CObject;
-    _parentIndex    : Integer;
-    _parentRow      : IDataRow;
-    _row            : IDataRow;
+    link           : TDatasetLink;
+    dataset        : TDataset;
 
   begin
-    _link := _datasetDataModel.Datalinks[ALevel];
+    link := _datasetDataModel.Datalinks[ALevel];
 
-    if _link.KeyField = '' then
-      EzDatasetError(CString.Format(ADatoResources.KeyFieldNotSet, _link.DisplayName), _datasetDataModel);
+//    if _link.KeyField = '' then
+//      EzDatasetError(CString.Format(ADatoResources.KeyFieldNotSet, _link.DisplayName), _datasetDataModel);
 
-    _dataset := _link.DetailDataset;
+    dataset := link.DetailDataset;
 
-    _dataset.First;
+    dataset.First;
 
-    while not _dataset.Eof do
+    while not dataset.Eof do
     begin
+      var key: CObject;
+      var parentKey: CObject;
+
+      if link.KeyField <> '' then
+        key := dataset.FieldValues[link.KeyField] else
+        key := CObject.From<TBookmark>(dataset.GetBookmark);
+
       if _datasetDataModel.SelfReferencing then
       begin
-        _key := _dataset.FieldValues[_link.KeyField];
-
-        if _link.ParentRefField <> '' then
-          _parentKey := _dataset.FieldValues[_link.ParentRefField] else
-          _parentKey := DBNull.Value;
+        if link.ParentRefField <> '' then
+          parentKey := dataset.FieldValues[link.ParentRefField];
       end
       else
       begin
         // IBaseInterface cast is required here. Otherwise CObject
         // will hold a pointer value instead of an interface.
-        _key := MasterDetailKey.Create(ALevel, _dataset.FieldValues[_link.KeyField]) as IBaseInterface;
+        key := CObject.From<IMasterDetailKey>(MasterDetailKey.Create(ALevel, key));
 
-        if _link.ParentRefField <> '' then
-          _parentKey := MasterDetailKey.Create( ALevel - 1,
-                                                        _dataset.FieldValues[_link.ParentRefField]) as IBaseInterface
-        else
-          _parentKey := DBNull.Value;
+        if link.ParentRefField <> '' then
+          parentKey := CObject.From<IMasterDetailKey>(MasterDetailKey.Create(ALevel - 1, dataset.FieldValues[link.ParentRefField]));
       end;
 
-      if not _parentKey.Equals(DBNull.Value) then
+      if not parentKey.IsNull then
       begin
-        _parentIndex := IndexOf(_parentKey);
-        if _parentIndex = -1 then
+        var parentIndex := IndexOf(parentKey);
+        var parentRow: IDataRow;
+        if parentIndex = -1 then
         //
         // Parent record could not be found, insert a dummy record
         //
         begin
-          _parentRow := Factory.CreateRow(Self, _parentKey, 0);
-          _parentRow.AutoCreated := True;
-          Add(_parentRow);
+          parentRow := Factory.CreateRow(Self, parentKey, 0);
+          parentRow.AutoCreated := True;
+          Add(parentRow);
         end else
-          _parentRow := Rows[_parentIndex];
+          parentRow := Rows[parentIndex];
 
-        _row := Factory.CreateRow(Self, _key, _parentRow.Level + 1);
-        Add(_row, _parentRow, InsertPosition.Child);
+        var row: IDataRow := Factory.CreateRow(Self, key, parentRow.Level + 1);
+        Add(row, parentRow, InsertPosition.Child);
       end
       else
       begin
-        _row := Factory.CreateRow(Self, _key, 0);
-        Add(_row);
+        var row := Factory.CreateRow(Self, key, 0);
+        Add(row);
       end;
 
-      _dataset.Next;
+      dataset.Next;
     end;
   end;
 
@@ -1483,7 +1498,6 @@ var
     end;
   end;
 
-
   procedure LoadMasterDetailData;
   var
     _level          : Integer;
@@ -1494,9 +1508,10 @@ var
     for _level := 0 to _datasetDataModel.Datalinks.Count - 1 do
     begin
       _link := _datasetDataModel.Datalinks[_level];
-      if _link.KeyField = '' then
-        EzDatasetError(CString.Format(ADatoResources.KeyFieldNotSet, _link.DisplayName), _datasetDataModel);
-      _keyFields[_level] := _link.DetailDataset.FieldByName(_link.KeyField);
+
+      if _link.KeyField <> '' then
+        _keyFields[_level] := _link.DetailDataset.FieldByName(_link.KeyField) else
+        _keyFields[_level] := nil; // Use bookmarks
     end;
 
     // Recursively load records
