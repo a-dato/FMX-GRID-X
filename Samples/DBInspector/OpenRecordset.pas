@@ -46,6 +46,7 @@ type
     procedure ExecuteExecute(Sender: TObject);
   private
     FStopWatch: TStopWatch;
+    FQueryEditorHeight: Single;
 
     function  get_CommandText: string;
     procedure set_CommandText(const Value: string);
@@ -97,7 +98,7 @@ begin
     TheQuery.FetchOptions.RecsMax := recCount else
     TheQuery.FetchOptions.RecsMax := -1;
 
-  TheQuery.ResourceOptions.CmdExecMode := amCancelDialog;
+  TheQuery.ResourceOptions.CmdExecMode := amBlocking;
 
   DatasetDataModel1.Close;
   TheQuery.FetchOptions.AutoClose := False;
@@ -115,9 +116,13 @@ begin
     end;
 
     TThread.Queue(nil, procedure begin
-      // DatasetDataModel1.DataLinks[0].KeyField := 'ID';
-      DatasetDataModel1.Open;
-      DataGrid.DataModelView := DatasetDataModel1.DataModelView;;
+
+      // Not all queries return a dataset
+      if TheQuery.Active then
+      begin
+        DatasetDataModel1.Open;
+        DataGrid.DataModelView := DatasetDataModel1.DataModelView;;
+      end;
 
       if fdConnection.Messages <> nil then
       begin
@@ -151,8 +156,24 @@ end;
 
 procedure TOpenRecordSetFrame.UpdateDialogControls(IsSqlSourceWindow: Boolean);
 begin
-  splitSqlSourcePanel.Visible := not IsSqlSourceWindow;
-  lyDataPanel.Visible := not IsSqlSourceWindow;
+  // Hide data grid, go into Sql source editor mode
+  if IsSqlSourceWindow then
+  begin
+    splitSqlSourcePanel.Visible := False;
+    lyDataPanel.Visible := False;
+    FQueryEditorHeight := SqlQuery.Height;
+    SqlQuery.Align := TAlignLayout.Client;
+  end
+  else
+  begin
+    SqlQuery.Align := TAlignLayout.Top;
+    if FQueryEditorHeight > 0 then
+      SqlQuery.Height := FQueryEditorHeight;
+
+    splitSqlSourcePanel.Visible := True;
+    lyDataPanel.Visible := True;
+  end;
+
 end;
 
 end.

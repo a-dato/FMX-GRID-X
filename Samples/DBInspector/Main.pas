@@ -25,7 +25,7 @@ type
   TfrmInspector = class(TForm)
     ActionList1: TActionList;
     DBTables: TFMXTreeControl;
-    TabControl1: TTabControl;
+    tcColumns: TTabControl;
     Splitter1: TSplitter;
     tbFields: TTabItem;
     tbIndexes: TTabItem;
@@ -39,7 +39,7 @@ type
     cbConnections: TComboBox;
     Layout1: TLayout;
     Layout2: TLayout;
-    TabControl2: TTabControl;
+    tcRecordSets: TTabControl;
     Splitter2: TSplitter;
     FirstTab: TTabItem;
     Layout4: TLayout;
@@ -56,6 +56,7 @@ type
     acViewSource: TAction;
     SpeedButton3: TSpeedButton;
     acRefresh: TAction;
+    tbAddNewTab: TTabItem;
 
     procedure FormCreate(Sender: TObject);
     procedure acOpenObjectExecute(Sender: TObject);
@@ -70,6 +71,7 @@ type
     procedure DBTablesCellChanged(Sender: TCustomTreeControl; e:
         CellChangedEventArgs);
     procedure edSearchChangeTracking(Sender: TObject);
+    procedure tbAddNewTabClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     LastSearchChange: Integer;
@@ -166,7 +168,8 @@ uses Login;
 
 procedure TfrmInspector.FormCreate(Sender: TObject);
 begin
-  TabControl1.TabIndex := 0;
+  tcColumns.TabIndex := 0;
+  tcRecordSets.TabIndex := 0;
   IntializeFrameForTab(FirstTab);
   LoadInspectorIniFile;
 end;
@@ -782,7 +785,7 @@ end;
 
 procedure TfrmInspector.OpenObject(const Item: IDBItem; SqlSource: string = '');
 begin
-  var tab := TabControl2.ActiveTab;
+  var tab := tcRecordSets.ActiveTab;
 
   var frame := tab.TagObject as TOpenRecordSetFrame;
 
@@ -852,6 +855,22 @@ end;
 procedure TfrmInspector.ShowHint(Sender: TObject);
 begin
 
+end;
+
+procedure TfrmInspector.tbAddNewTabClick(Sender: TObject);
+begin
+  // Convert 'Add' tab into a tab with record set
+  var tab := Sender as TTabItem;
+  tab.Text := '<unknown>';
+  tab.OnClick := nil;
+  IntializeFrameForTab(tab);
+  UpdateConnectionForTab(tab, True);
+
+  var addTab := TTabItem.Create(tcRecordSets);
+  addTab.Text := '+';
+  addTab.Index := tab.Index + 1;
+  addTab.OnClick := tbAddNewTabClick;
+  tcRecordSets.AddObject(addTab);
 end;
 
 procedure TfrmInspector.Timer1Timer(Sender: TObject);

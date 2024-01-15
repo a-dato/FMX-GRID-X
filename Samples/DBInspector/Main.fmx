@@ -48,7 +48,7 @@ object frmInspector: TfrmInspector
       Size.Height = 7.000000000000000000
       Size.PlatformDefault = False
     end
-    object TabControl1: TTabControl
+    object tcColumns: TTabControl
       Align = Client
       Size.Width = 257.000000000000000000
       Size.Height = 306.000000000000000000
@@ -196,15 +196,17 @@ object frmInspector: TfrmInspector
     Size.Height = 602.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 7
-    object TabControl2: TTabControl
+    object tcRecordSets: TTabControl
       Align = Client
       Size.Width = 816.000000000000000000
       Size.Height = 602.000000000000000000
       Size.PlatformDefault = False
-      TabIndex = 0
+      TabIndex = 1
       TabOrder = 0
       TabPosition = PlatformDefault
       Sizes = (
+        816s
+        576s
         816s
         576s)
       object FirstTab: TTabItem
@@ -212,7 +214,7 @@ object frmInspector: TfrmInspector
           item
           end>
         TextSettings.Trimming = None
-        IsSelected = True
+        IsSelected = False
         Size.Width = 86.000000000000000000
         Size.Height = 26.000000000000000000
         Size.PlatformDefault = False
@@ -221,6 +223,20 @@ object frmInspector: TfrmInspector
         Text = '<unknown>'
         ExplicitSize.cx = 69.000000000000000000
         ExplicitSize.cy = 26.000000000000000000
+      end
+      object tbAddNewTab: TTabItem
+        CustomIcon = <
+          item
+          end>
+        TextSettings.Trimming = None
+        IsSelected = True
+        Size.Width = 29.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = '+'
+        OnClick = tbAddNewTabClick
       end
     end
   end
@@ -286,7 +302,7 @@ object frmInspector: TfrmInspector
         TextSettings.Trimming = None
       end
       object SpeedButton3: TSpeedButton
-        Action = acViewSource
+        Action = acRefresh
         Align = Left
         ImageIndex = -1
         Position.X = 82.000000000000000000
