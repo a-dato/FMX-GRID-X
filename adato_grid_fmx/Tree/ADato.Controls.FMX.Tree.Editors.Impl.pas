@@ -41,16 +41,13 @@ type
     procedure set_Value(const Value: CObject); virtual;
     function  get_OriginalValue: CObject;
 
-    function  WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState) : Boolean; virtual;
-
     function  ParseValue(var AValue: CObject): Boolean;
   public
     constructor Create(const Sink: ICellEditorSink);
     destructor Destroy; override;
-
     procedure BeginEdit; virtual;
     procedure EndEdit; virtual;
-
+    function  WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; virtual;
     property OriginalValue: CObject read get_OriginalValue;
   end;
 
@@ -82,6 +79,7 @@ type
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
 
     procedure BeginEdit; override;
+    function WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; override;
   end;
 
   TDateTimeEditor = class(TCellEditor)
@@ -127,11 +125,10 @@ type
     procedure Dropdown;
   public
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
-
     procedure BeginEdit; override;
+    function WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; override;
 
     property PickList: IList read get_PickList write set_PickList;
-
     property SaveData: Boolean read _saveData write _saveData;
   end;
 
@@ -147,13 +144,10 @@ uses
 
 { TCellEditor }
 
-procedure TCellEditor.BeginEdit;
-begin
-  _Control.SetFocus;
-end;
-
 constructor TCellEditor.Create(const Sink: ICellEditorSink);
 begin
+  inherited Create;
+
   _editorSink := Sink;
 end;
 
@@ -179,6 +173,11 @@ begin
   }
 
   _Control.Release;
+end;
+
+procedure TCellEditor.BeginEdit;
+begin
+  _Control.SetFocus;
 end;
 
 procedure TCellEditor.EndEdit;
@@ -495,6 +494,11 @@ begin
     ce.Text := Value.ToString;
 end;
 
+function TDropDownEditor.WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean;
+begin
+  Result := inherited or (Key in [vkUp, vkDown]);
+end;
+
 { TDateTimeEditOnKeyDownOverride }
 
 procedure TDateTimeEditOnKeyDownOverride.KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState);
@@ -548,6 +552,11 @@ procedure TTextCellMultilineEditor.set_Value(const Value: CObject);
 begin
   inherited;
   TMemo(_Control).Text := CStringToString(Value.ToString(True));
+end;
+
+function TTextCellMultilineEditor.WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean;
+begin
+  Result := inherited or (Key in [vkUp, vkDown]);
 end;
 
 end.

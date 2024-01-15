@@ -21,8 +21,6 @@ begin
   if TextControl.Canvas = nil then
     Result := Settings.Font.Size + 10
   else begin
-    Result := 0;
-
     var layout: TTextLayout := TTextLayoutManager.TextLayoutByCanvas(TextControl.Canvas.ClassType).Create(TextControl.Canvas);
     try
       Layout.BeginUpdate;
@@ -58,8 +56,6 @@ begin
   if TextControl.Canvas = nil then
     Result := Settings.Font.Size + 10
   else begin
-    Result := 0;
-
     var layout: TTextLayout := TTextLayoutManager.TextLayoutByCanvas(TextControl.Canvas.ClassType).Create(TextControl.Canvas);
     try
       Layout.BeginUpdate;
