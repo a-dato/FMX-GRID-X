@@ -310,16 +310,8 @@ begin
       if Interfaces.Supports<IEditableListObject>(_EditContext, e) then
       begin
         if Cancel then
-        begin
-//          var oldEditContext := _EditContext;
-
-          e.CancelEdit;
-//          var es: IEditState;
-//          if Interfaces.Supports<IEditState>(oldEditContext, es) and es.IsNew then
-//            ctxt := oldEditContext; // keep state to _IsNew
-        end
-        else
-        begin
+          e.CancelEdit
+        else begin
           if Assigned(_OnAskForApply) then
           begin
             var canApply := True;
