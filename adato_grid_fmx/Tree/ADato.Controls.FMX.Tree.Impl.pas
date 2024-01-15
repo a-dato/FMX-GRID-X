@@ -2141,7 +2141,8 @@ begin
   _selectInModelTimer.Free;
   set_Model(nil);
 
-  _GridLineStroke.DisposeOf;
+  //_GridLineStroke.Free;
+  // Do not destroy it here, _GridLineStroke is non cloned object directly from style - so FMX will destroy it.
 
  // FreeCachedStyledObjects;
   inherited;
@@ -5138,9 +5139,9 @@ begin
     // Negotiate the final height of the row. This will init and add a row in another paired control (Gantt or Tree)
     if not _SkipRowHeightNegotiation and (_RowHeights <> nil) then
     begin
-      var topRowHeight: Single := 0.0;
-      if _View.Count > 0 then
-        topRowHeight := _View[0].Height;
+//      var topRowHeight: Single := 0.0;
+//      if _View.Count > 0 then
+//        topRowHeight := _View[0].Height;
 
       _RowHeights.NegotiateRowHeight(Self, treeRow, {var} rowHeight);
 
@@ -5199,7 +5200,6 @@ function TCustomTreeControl.InitRowCells(const TreeRow: ITreeRow; const IsCached
 
     if (CellControl.StyleState = TStyleState.Applied) then
     begin
-       {$Message Hint 'Check with custom style, remove  (treeCell.Column.StyleLookup = '') line'}
 
       // frozen cell should be non-transparent or cells scrolled under it would be visible
        if treeCell.Column.Frozen and (treeCell.Column.StyleLookup = '') then
@@ -6993,8 +6993,7 @@ procedure TCustomTreeControl.EditorKeyDown(Sender: TObject; var Key: Word; var K
 begin
   if (_editor = nil) then exit;
 
-  if Key in [vkLeft, vkRight] then Exit;
-  //if _editor.WantsKey(Key, KeyChar, Shift) then Exit;
+  if _editor.WantsKey(Key, KeyChar, Shift) then Exit;
 
   // Ctrl + Enter - use this keys in multiline editor and do not close it.
   if ([ssCtrl] = Shift) and (Key = vkReturn) then exit;
@@ -7005,18 +7004,6 @@ begin
     TEdit(Sender).Model.SelStart := MaxInt;
 
   case Key of
-  { vkUp, vkDown, vkTab:
-    begin
-      //this will trigger SelectCell > EndEdit in a Tree, EndEdit will be triggered only in case if RowIndex or ColumnIndex were changed
-      // Fixing: when user is pressing UP\Down in editor -do not send KeyDown event to the main KeyDownEvent,
-      // cursor should move in Editor (e.g. multiline)
-      KeyDown(Key, KeyChar, Shift);
-
-      Key := 0;
-    end; }
-
-    {$Message hint 'Code below creates a bug'}
-// in case if user uses MULTILINE EDITOR, he cannot move inside an editor with UP\DOWN keys, because this will close it. Alex
     vkUp, vkDown, vkTab:
     begin
       var storedKey := Key;
