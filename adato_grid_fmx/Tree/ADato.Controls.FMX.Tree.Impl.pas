@@ -2443,7 +2443,7 @@ begin
 
 
     _frmHeaderPopupMenu.AllowClearColumnFilter := (filter <> nil);
-end;
+  end;
 end;
 
 procedure TCustomTreeControl.HeaderPopupMenu_Closed(Sender: TObject; var Action: TCloseAction);
@@ -2470,6 +2470,10 @@ var
       if filterDescriptions.Count = 0 then
         filterDescriptions := nil;
     end;
+
+    if sortDescriptions <> nil then
+      sortDescriptions := nil;
+    // we create sortDescriptions with filters, see in function SetFilter why.
   end;
 
   function SortAscDesc(const aSortDirection: ListSortDirection): CList<IListSortDescription>;
@@ -2501,7 +2505,6 @@ var
   var
     cmpFilter: IListFilterDescriptionWithComparer;
     filterValues: List<CObject>;
-  // descriptor: ITreeSortDescription;
     filter: ITreeFilterDescription; // ITreeFilterDescription;
   begin
     Result := False;
@@ -2531,19 +2534,6 @@ var
         if filterDescriptions = nil then
           filterDescriptions := CList<ITreeFilterDescription>.Create as List<IListFilterDescription>; //<ITreeFilterDescription>.Create;
 
-        // not sure how to implement - filter.Comparer - Cannot assign to a read-only property
-        // In VCL ITreeFilterDescription has Comparer read-write. In FMX it does not exists, but exists in
-        // inherited interface IListFilterByComparer as read only. Should I add Comparer into ITreeFilterDescription?
-        // Read - write (as in VCL)?
-      {
-        if (column.Column.Sort = SortType.ColumnCellComparer) then
-        begin
-          descriptor := TTreeSortDescription.Create(column);
-          TTreeSortDescription(descriptor)._SortType := SortType.ColumnCellComparer; // not sure if it'll apply SortType in such way, check!
-
-          filter.Comparer := DoSortingGetComparer(descriptor, False);
-        end;  }
-
         filterDescriptions.Add(filter);
       end
       else
@@ -2554,7 +2544,24 @@ var
           filter.Values.Sort(cmpFilter.Comparer) else
           filter.Values.Sort;
       except
-        end;
+      end;
+
+
+    { Create sortDescriptions too, to fix issue: Open an app, RMB on a column, select some filter column value:
+      Column filter raises 'Types must be equal' exception.
+      Issue is in TListComparer.PrepareSorts; which checks
+      if f.IndexInSortDescriptions = -1 then
+        f.Sort := filter.ToSortDescription - and in this line creates new instance of "CListSortDescription.Create", NOT
+      TTreeSortDescription, which is inherited from it.
+      Then it uses CListSortDescription.GetSortableValue - which returns incorrect value
+      but should use TTreeSortDescription.GetSortableValue (overrided) }
+      if sortDescriptions = nil then
+      begin
+        sortDescriptions := CList<IListSortDescription>.Create;
+        var description: ITreeSortDescription := TTreeSortDescription.Create(Self, Column, ListSortDirection.Ascending);
+        if description <> nil then
+          sortDescriptions.Add(description);
+      end;
 
       Result := True;
     end
@@ -2626,7 +2633,7 @@ begin
       sortDescriptions := nil;
       filterDescriptions := nil;
       applySortingOrFilter := True;
-end;
+    end;
   end;
 
   if applySortingOrFilter then
@@ -8115,7 +8122,7 @@ begin
     if sorts = nil then
     begin
       sorts := CList<IListSortDescription>.Create;
-      var description := NewSortDescription;
+      var description: ITreeSortDescription := NewSortDescription;
       if description <> nil then
         sorts.Add(description);
     end

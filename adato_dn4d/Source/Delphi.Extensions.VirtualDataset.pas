@@ -657,22 +657,16 @@ var
       ftDate, ftTime, ftDateTime:
         PDateTimeRec(Buffer)^.DateTime := TimeStampToMSecs(DateTimeToTimeStamp(TVarData(Data).VDate));
 
-  //      ftBytes, ftVarBytes:
-  //        if NativeFormat then
-  //        begin
-  //          PData := VarArrayLock(Data);
-  //          try
-  //            DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
-  //          finally
-  //            VarArrayUnlock(Data);
-  //          end;
-  //        end
-  //        else
-  //        begin
-  //          if VarIsArray(Data) then
-  //            SetLength(Buffer, VarArrayHighBound(Data, 1) + 1);
-  //          TDBBitConverter.UnsafeFromVariant(Data, Buffer);
-  //        end;
+      ftBytes, ftVarBytes:
+      begin
+        var PData := VarArrayLock(Data);
+        try
+          DataConvert(Field, BytesOf(PData, VarArrayHighBound(Data, 1) - VarArrayLowBound(Data, 1) + 1), Buffer, True);
+        finally
+          VarArrayUnlock(Data);
+        end;
+      end;
+
       ftInterface:
         begin
           TempBuff := BytesOf(@Data, SizeOf(IUnknown));
@@ -1185,6 +1179,8 @@ procedure TCustomVirtualDataset.InternalSetFieldData(Field: TField; Buffer: TVal
         Data := PVariant(Buffer)^;
       ftDate, ftTime, ftDateTime:
         Data := TimeStampToDateTime(MSecsToTimeStamp(PDateTimeRec(Buffer)^.DateTime));
+      ftTimeStamp:
+        VarSQLTimeStampCreate(Data, PSQLTimeStamp(Buffer)^);
       ftBCD:
         Data := PCurrency(Buffer)^;
       ftBytes, ftVarBytes:

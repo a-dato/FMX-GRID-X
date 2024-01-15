@@ -275,12 +275,10 @@ var
 begin
   Params := inherited get_CreateParams;
 
-  {$IFDEF HIDE_SCROLLBARS_ONCREATE}
-  if _ScrollbarOptions._Visible in [ScrollStyle_Both, ScrollStyle_Vertical] then
-    Params.Style := Params.Style or WS_VSCROLL;
-  if _ScrollbarOptions._Visible in [ScrollStyle_Both, ScrollStyle_Horizontal] then
-    Params.Style := Params.Style or WS_HSCROLL;
-  {$ENDIF}
+//  if _ScrollbarOptions._Visible in [ScrollStyle_Both, ScrollStyle_Vertical] then
+//    Params.Style := Params.Style or WS_VSCROLL;
+//  if _ScrollbarOptions._Visible in [ScrollStyle_Both, ScrollStyle_Horizontal] then
+//    Params.Style := Params.Style or WS_HSCROLL;
 
   Params.Style := Params.Style and not WS_BORDER;
 
