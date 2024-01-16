@@ -2,7 +2,7 @@ object frmLogin: TfrmLogin
   Left = 0
   Top = 0
   Caption = 'Login'
-  ClientHeight = 145
+  ClientHeight = 129
   ClientWidth = 323
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -10,7 +10,7 @@ object frmLogin: TfrmLogin
   DesignerMasterStyle = 0
   object edUserName: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 1
+    TabOrder = 0
     Position.X = 128.000000000000000000
     Position.Y = 24.000000000000000000
     Size.Width = 169.000000000000000000
@@ -30,7 +30,7 @@ object frmLogin: TfrmLogin
   end
   object edPassword: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 0
+    TabOrder = 1
     Password = True
     Position.X = 128.000000000000000000
     Position.Y = 54.000000000000000000
@@ -50,17 +50,18 @@ object frmLogin: TfrmLogin
     end
   end
   object Button1: TButton
-    Position.X = 124.000000000000000000
-    Position.Y = 104.000000000000000000
-    TabOrder = 3
+    Default = True
+    Position.X = 128.000000000000000000
+    Position.Y = 89.000000000000000000
+    TabOrder = 2
     Text = 'OK'
     TextSettings.Trimming = None
     OnClick = Button1Click
   end
   object Button2: TButton
     Position.X = 217.000000000000000000
-    Position.Y = 104.000000000000000000
-    TabOrder = 2
+    Position.Y = 89.000000000000000000
+    TabOrder = 3
     Text = 'Cancel'
     TextSettings.Trimming = None
     OnClick = Button2Click

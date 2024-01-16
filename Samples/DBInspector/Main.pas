@@ -16,7 +16,7 @@ uses
   System.ImageList, FMX.ImgList, FMX.ExtCtrls,
   ADato.FMX.Controls.ScrollableControl.Impl, FMX.Edit, System_,
   System.Collections.Generic, FireDAC.Comp.UI, FireDAC.FMXUI.Async,
-  OpenRecordset;
+  OpenRecordset, FireDAC.FMXUI.Login;
 
 type
   {$M+} // Load RTTI information for IDBItem interface
@@ -57,7 +57,11 @@ type
     SpeedButton3: TSpeedButton;
     acRefresh: TAction;
     tbAddNewTab: TTabItem;
+    SpeedButton4: TSpeedButton;
+    acAddConnection: TAction;
+    FDGUIxLoginDialog1: TFDGUIxLoginDialog;
 
+    procedure acAddConnectionExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure acOpenObjectExecute(Sender: TObject);
     procedure acRefreshExecute(Sender: TObject);
@@ -164,7 +168,34 @@ implementation
 
 {$R *.fmx}
 
-uses Login;
+uses Login, FireDAC.VCLUI.ConnEdit;
+
+procedure TfrmInspector.acAddConnectionExecute(Sender: TObject);
+var
+  name: string;
+  def: IFDStanConnectionDef;
+
+begin
+  def := FDManager.ConnectionDefs.AddConnectionDef;
+  if TfrmFDGUIxFormsConnEdit.Execute(def, '') then
+  begin
+    Disconnect;
+
+    if def.Params.Values['Server'] <> '' then
+      name := def.Params.Values['Server'] + ' -> ' + def.Params.Database else
+      name := def.Params.Database;
+
+    if FDManager.ConnectionDefs.FindConnectionDef(name) <> nil then
+      FDManager.DeleteConnectionDef(name);
+
+    def.Name := name;
+    def.MarkPersistent;
+
+    FDManager.ConnectionDefs.Save;
+
+    Connect(name);
+  end;
+end;
 
 procedure TfrmInspector.FormCreate(Sender: TObject);
 begin

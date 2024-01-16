@@ -11,14 +11,14 @@ object frmInspector: TfrmInspector
   DesignerMasterStyle = 0
   object Layout1: TLayout
     Align = MostLeft
-    Position.Y = 56.000000000000000000
+    Position.Y = 25.000000000000000000
     Size.Width = 257.000000000000000000
-    Size.Height = 602.000000000000000000
+    Size.Height = 633.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 6
     object DBTables: TFMXTreeControl
       Align = Top
-      Position.Y = 26.000000000000000000
+      Position.Y = 49.000000000000000000
       Size.Width = 257.000000000000000000
       Size.Height = 263.000000000000000000
       Size.PlatformDefault = False
@@ -43,7 +43,7 @@ object frmInspector: TfrmInspector
       Align = Top
       Cursor = crVSplit
       MinSize = 20.000000000000000000
-      Position.Y = 289.000000000000000000
+      Position.Y = 312.000000000000000000
       Size.Width = 257.000000000000000000
       Size.Height = 7.000000000000000000
       Size.PlatformDefault = False
@@ -51,18 +51,18 @@ object frmInspector: TfrmInspector
     object tcColumns: TTabControl
       Align = Client
       Size.Width = 257.000000000000000000
-      Size.Height = 306.000000000000000000
+      Size.Height = 314.000000000000000000
       Size.PlatformDefault = False
       TabIndex = 2
       TabOrder = 2
       TabPosition = PlatformDefault
       Sizes = (
         257s
-        280s
+        288s
         257s
-        280s
+        288s
         257s
-        280s)
+        288s)
       object tbFields: TTabItem
         CustomIcon = <
           item
@@ -80,7 +80,7 @@ object frmInspector: TfrmInspector
         object DBColumns: TFMXTreeControl
           Align = Client
           Size.Width = 257.000000000000000000
-          Size.Height = 280.000000000000000000
+          Size.Height = 288.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 0
           AcceptsTab = False
@@ -96,7 +96,7 @@ object frmInspector: TfrmInspector
           DefaultExpandRows = False
           HighlightRows = True
           Viewport.Width = 255.000000000000000000
-          Viewport.Height = 253.000000000000000000
+          Viewport.Height = 261.000000000000000000
         end
       end
       object tbIndexes: TTabItem
@@ -116,7 +116,7 @@ object frmInspector: TfrmInspector
         object DBIndexes: TFMXTreeControl
           Align = Client
           Size.Width = 257.000000000000000000
-          Size.Height = 280.000000000000000000
+          Size.Height = 288.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 0
           AcceptsTab = False
@@ -133,7 +133,7 @@ object frmInspector: TfrmInspector
           HighlightRows = True
           CellChanged = DBIndexesCellChanged
           Viewport.Width = 255.000000000000000000
-          Viewport.Height = 253.000000000000000000
+          Viewport.Height = 261.000000000000000000
         end
       end
       object tbIndexFields: TTabItem
@@ -153,7 +153,7 @@ object frmInspector: TfrmInspector
         object DBIndexColumns: TFMXTreeControl
           Align = Client
           Size.Width = 257.000000000000000000
-          Size.Height = 280.000000000000000000
+          Size.Height = 288.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 0
           AcceptsTab = False
@@ -169,14 +169,14 @@ object frmInspector: TfrmInspector
           DefaultExpandRows = False
           HighlightRows = True
           Viewport.Width = 255.000000000000000000
-          Viewport.Height = 253.000000000000000000
+          Viewport.Height = 261.000000000000000000
         end
       end
     end
     object Layout3: TLayout
       Align = MostTop
       Size.Width = 257.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
       object edSearch: TEdit
@@ -184,31 +184,70 @@ object frmInspector: TfrmInspector
         Align = Client
         TabOrder = 3
         Size.Width = 257.000000000000000000
-        Size.Height = 26.000000000000000000
+        Size.Height = 24.000000000000000000
         Size.PlatformDefault = False
         OnChangeTracking = edSearchChangeTracking
+      end
+      object lyButtons: TLayout
+        Align = Top
+        Size.Width = 257.000000000000000000
+        Size.Height = 25.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        object SpeedButton1: TSpeedButton
+          Action = acOpenObject
+          Align = Left
+          ImageIndex = -1
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'nexttoolbutton'
+          TextSettings.Trimming = None
+        end
+        object SpeedButton2: TSpeedButton
+          Action = acViewSource
+          Align = Left
+          ImageIndex = -1
+          Position.X = 41.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'pagecurltoolbutton'
+          TextSettings.Trimming = None
+        end
+        object SpeedButton3: TSpeedButton
+          Action = acRefresh
+          Align = Left
+          ImageIndex = -1
+          Position.X = 82.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'refreshtoolbutton'
+          TextSettings.Trimming = None
+        end
       end
     end
   end
   object Layout2: TLayout
     Align = Client
     Size.Width = 816.000000000000000000
-    Size.Height = 602.000000000000000000
+    Size.Height = 633.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 7
     object tcRecordSets: TTabControl
       Align = Client
       Size.Width = 816.000000000000000000
-      Size.Height = 602.000000000000000000
+      Size.Height = 633.000000000000000000
       Size.PlatformDefault = False
       TabIndex = 1
       TabOrder = 0
       TabPosition = PlatformDefault
       Sizes = (
         816s
-        576s
+        607s
         816s
-        576s)
+        607s)
       object FirstTab: TTabItem
         CustomIcon = <
           item
@@ -237,6 +276,8 @@ object frmInspector: TfrmInspector
         TabOrder = 0
         Text = '+'
         OnClick = tbAddNewTabClick
+        ExplicitSize.cx = 29.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
       end
     end
   end
@@ -245,21 +286,21 @@ object frmInspector: TfrmInspector
     Cursor = crHSplit
     MinSize = 20.000000000000000000
     Position.X = 257.000000000000000000
-    Position.Y = 56.000000000000000000
+    Position.Y = 25.000000000000000000
     Size.Width = 8.000000000000000000
-    Size.Height = 602.000000000000000000
+    Size.Height = 633.000000000000000000
     Size.PlatformDefault = False
   end
   object Layout4: TLayout
     Align = MostTop
     Size.Width = 1081.000000000000000000
-    Size.Height = 56.000000000000000000
+    Size.Height = 25.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 14
     object cbConnections: TComboBox
       Align = Left
       Size.Width = 327.000000000000000000
-      Size.Height = 31.000000000000000000
+      Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       OnChange = cbConnectionsChange
@@ -268,50 +309,21 @@ object frmInspector: TfrmInspector
       Align = Left
       Position.X = 327.000000000000000000
       Size.Width = 157.000000000000000000
-      Size.Height = 31.000000000000000000
+      Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       OnChange = cbDataBasesChange
     end
-    object lyButtons: TLayout
-      Align = Bottom
-      Position.Y = 31.000000000000000000
-      Size.Width = 1081.000000000000000000
+    object SpeedButton4: TSpeedButton
+      Action = acAddConnection
+      Align = Left
+      ImageIndex = -1
+      Position.X = 484.000000000000000000
+      Size.Width = 41.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 2
-      object SpeedButton1: TSpeedButton
-        Action = acOpenObject
-        Align = Left
-        ImageIndex = -1
-        Size.Width = 41.000000000000000000
-        Size.Height = 25.000000000000000000
-        Size.PlatformDefault = False
-        StyleLookup = 'nexttoolbutton'
-        TextSettings.Trimming = None
-      end
-      object SpeedButton2: TSpeedButton
-        Action = acViewSource
-        Align = Left
-        ImageIndex = -1
-        Position.X = 41.000000000000000000
-        Size.Width = 41.000000000000000000
-        Size.Height = 25.000000000000000000
-        Size.PlatformDefault = False
-        StyleLookup = 'pagecurltoolbutton'
-        TextSettings.Trimming = None
-      end
-      object SpeedButton3: TSpeedButton
-        Action = acRefresh
-        Align = Left
-        ImageIndex = -1
-        Position.X = 82.000000000000000000
-        Size.Width = 41.000000000000000000
-        Size.Height = 25.000000000000000000
-        Size.PlatformDefault = False
-        StyleLookup = 'refreshtoolbutton'
-        TextSettings.Trimming = None
-      end
+      StyleLookup = 'addtoolbuttonbordered'
+      TextSettings.Trimming = None
     end
   end
   object Timer1: TTimer
@@ -337,6 +349,10 @@ object frmInspector: TfrmInspector
     object acRefresh: TAction
       Text = 'acRefresh'
       OnExecute = acRefreshExecute
+    end
+    object acAddConnection: TAction
+      Text = 'acAddConnection'
+      OnExecute = acAddConnectionExecute
     end
   end
   object fdConnection: TFDConnection
@@ -368,5 +384,10 @@ object frmInspector: TfrmInspector
     Destination = <>
     Left = 104
     Top = 296
+  end
+  object FDGUIxLoginDialog1: TFDGUIxLoginDialog
+    Provider = 'FMX'
+    Left = 224
+    Top = 186
   end
 end
