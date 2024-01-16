@@ -3013,7 +3013,10 @@ begin
     if RowIndex < 0 then Exit;
 
     // A cell can be selected before the control is initialized !
-    if ((_InternalState - [TreeState.Refresh]) <> []) and (_UpdateCount = 0) then
+    { Fixed: Added "- [TreeState_RowHeightsChanged". User changes a cell and pressed Up key, EditorEnd changes the height of
+      the row. Here, with TreeState_RowHeightsChanged it goes Initialize where Tree resets itself, all rows are removed.
+      Later after EndEdit it calls SelectCell where GetRow(X) returns nil = AV. Alex. }
+    if ((_InternalState - [TreeState.Refresh] - [TreeState_RowHeightsChanged] ) <> []) and (_UpdateCount = 0) then
       Initialize;
 
     // Turn off End key mode
@@ -5629,12 +5632,6 @@ begin
   begin
     _lastUpdatedViewportPosition.Y := MinComp; // Do not use MinSingle because MinSingle < 0 = False!!
     _lastUpdatedViewportPosition.X := ViewportPosition.X; // this will be restored after update
-
-// moved into Initialize proc.
-//    if Flags * [TreeState.RowHeightsChanged] = [] then
-//      if not (TreeOption.PreserveRowHeights in Options) and
-//        ([TreeState.DataChanged, TreeState.ColumnsChanged] * Flags <> []) then
-//        ClearRowHeights;
   end;
 
   _InternalState := _InternalState + Flags; // - TreeState.DataBindingChanged];
@@ -5651,27 +5648,6 @@ begin
     if (ix = _RepaintIndex) and (Content <> nil) then
       Content.Repaint; // Let Initialize do update of internal state
   end);
-
-//  // Reset data connections all-together
-//  if Flags * [TreeState.DataChanged, TreeState.DataBindingChanged] <> [] then
-//  begin
-//    _CellPropertiesProvider := nil;
-//    _dataList := nil;
-//    _dataListTested := False;
-//    if _View <> nil then
-//      _View.Clear;
-//  end
-//
-//  // Data must be sorted again....
-//  else if (_View <> nil) and (Flags * [TreeState.SortChanged] <> []) then
-//    _View.Clear // Show go to a ResetSortOrder method
-//
-//  // Data must be sorted again....
-//  else if (_View <> nil) and (Flags * [TreeState.ColumnsChanged] <> []) then
-//    _View.Clear; // Triggers a rebuild of the current view
-//
-//  _InternalState := _InternalState + Flags; // - TreeState.DataBindingChanged];
-//  Content.Repaint;
 end;
 
 procedure TCustomTreeControl.ResetView(const Full: Boolean = True; const SaveTopRow: Boolean = False;
@@ -7011,10 +6987,10 @@ begin
 
       Key := 0;
 
-      TThread.ForceQueue(nil, procedure begin
+    //  TThread.ForceQueue(nil, procedure begin
         EditorEnd(True); //EndEdit;
         KeyDown(storedKey, storedChar, Shift);
-      end);
+   //   end);
     end;
 
     vkEscape:
@@ -7024,18 +7000,18 @@ begin
       if _editor is TDropDownEditor then
         TDropDownEditor(_editor).SaveData := False;
 
-      TThread.ForceQueue(nil, procedure begin
+     // TThread.ForceQueue(nil, procedure begin
          EditorEnd(False); //EndEdit(False);
-      end);
+    //  end);
     end;
 
     vkReturn:
     begin
       // Need to call EndEdit here, because RowIndex or ColumnIndex were not changed and SelectCell will not not call EndEdit
-      TThread.ForceQueue(nil, procedure begin
+    //  TThread.ForceQueue(nil, procedure begin
        // EndEdit;
         EditorEnd(True);
-      end);
+   //   end);
 
 //      Key := 0;
     end;
@@ -11419,8 +11395,10 @@ end;
 
 procedure TTreeRow.set_Height(const Value: Single);
 begin
-  _Owner.RowHeight[DataItem] := Value;
-  if _Control <> nil then
+  if _Owner.RowHeight[DataItem] <> Value then
+    _Owner.RowHeight[DataItem] := Value;
+
+  if (_Control <> nil) and (_Control.Height <> Value) then
     _Control.Height := Value;
 end;
 

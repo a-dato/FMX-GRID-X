@@ -95,9 +95,8 @@ type
     procedure Dropdown;
   public
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
-
     procedure BeginEdit; override;
-
+    function WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; override;
     property ValueChanged: Boolean read _ValueChanged write _ValueChanged;
   end;
 
@@ -349,6 +348,11 @@ begin
     date := CDateTime.Now;
 
   TDateEdit(_Control).Date:= date;
+end;
+
+function TDateTimeEditor.WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean;
+begin
+  Result := inherited or (Key in [vkUp, vkDown]);
 end;
 
 { TDropDownEditor }
