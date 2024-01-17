@@ -15,7 +15,7 @@ uses
   FMX.Controls.Presentation, FMX.ScrollBox, FMX.Memo, System.Actions,
   FMX.ActnList, Delphi.Extensions.VirtualDataset,
   ADato.Data.VirtualDatasetDataModel, ADato.Data.DatasetDataModel,
-  System.Diagnostics, FMX.ListBox;
+  System.Diagnostics, FMX.ListBox, System_, ADato.Controls.FMX.Tree.Intf;
 
 type
   TOpenRecordSetFrame = class(TFrame)
@@ -40,8 +40,17 @@ type
     Splitter2: TSplitter;
     cbRecordCount: TComboBox;
     Label1: TLabel;
+    lblExecutionLog: TLabel;
+    lblCellEditor: TLabel;
     procedure acAbortExecute(Sender: TObject);
     procedure acNextRecordSetExecute(Sender: TObject);
+    procedure ActionList1Update(Action: TBasicAction; var Handled: Boolean);
+    procedure DataEditorChangeTracking(Sender: TObject);
+    procedure DataEditorKeyDown(Sender: TObject; var Key: Word; var KeyChar:
+        WideChar; Shift: TShiftState);
+    procedure DataGridCellChanged(Sender: TCustomTreeControl; e:
+        CellChangedEventArgs);
+    procedure DataGridEditStart(const Sender: TObject; e: StartEditEventArgs);
 
   private
     FStopWatch: TStopWatch;
@@ -77,11 +86,83 @@ begin
     TheQuery.NextRecordSet;
 end;
 
+procedure TOpenRecordSetFrame.ActionList1Update(Action: TBasicAction; var
+    Handled: Boolean);
+begin
+  Handled := True;
+  lblCellEditor.Visible := not DataEditor.IsFocused;
+  lblExecutionLog.Visible := not Logging.IsFocused;
+end;
+
 procedure TOpenRecordSetFrame.AddMessage(AMessage: string);
 begin
   TThread.Queue(nil, procedure begin
     Logging.Lines.Add(AMessage);
   end);
+end;
+
+procedure TOpenRecordSetFrame.DataEditorChangeTracking(Sender: TObject);
+begin
+  DataGrid.BeginEdit;
+  DataGrid.EditActiveCell(False);
+  DataGrid.Editor.Value := DataEditor.Lines.Text;
+end;
+
+procedure TOpenRecordSetFrame.DataEditorKeyDown(Sender: TObject; var Key: Word;
+    var KeyChar: WideChar; Shift: TShiftState);
+begin
+  if Key = vkReturn then
+  begin
+    DataGrid.EndEdit(True);
+    Key := 0;
+  end;
+
+  if Key = vkEscape then
+  begin
+    DataGrid.CancelEdit;
+    Key := 0;
+  end;
+end;
+
+procedure TOpenRecordSetFrame.DataGridCellChanged(Sender: TCustomTreeControl; e: CellChangedEventArgs);
+begin
+  var s: string := '';
+
+  DataEditor.OnChangeTracking := nil;
+  try
+    if e.NewCell <> nil then
+    begin
+      var p := e.NewCell.Column.PropertyName;
+      if not CString.IsNullOrEmpty(p) then
+      begin
+        var f := DatasetDataModel1.FieldByName(p);
+        if f <> nil then
+        begin
+          s := f.AsString;
+
+          if f.CanModify then
+          begin
+            lblCellEditor.Text := 'Cell editor';
+            DataEditor.ReadOnly := False;
+          end
+          else
+          begin
+            lblCellEditor.Text := 'Cell editor (read only)';
+            DataEditor.ReadOnly := True;
+          end;
+        end;
+      end;
+    end;
+
+    DataEditor.Lines.Text := s;
+  finally
+    DataEditor.OnChangeTracking := DataEditorChangeTracking;
+  end;
+end;
+
+procedure TOpenRecordSetFrame.DataGridEditStart(const Sender: TObject; e: StartEditEventArgs);
+begin
+  e.MultilineEdit := True;
 end;
 
 procedure TOpenRecordSetFrame.ExecuteQuery;

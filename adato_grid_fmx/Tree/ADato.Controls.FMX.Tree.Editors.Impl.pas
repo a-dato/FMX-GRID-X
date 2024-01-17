@@ -45,7 +45,7 @@ type
   public
     constructor Create(const Sink: ICellEditorSink);
     destructor Destroy; override;
-    procedure BeginEdit; virtual;
+    procedure BeginEdit(const EditValue: CObject; SetFocus: Boolean); virtual;
     procedure EndEdit; virtual;
     function  WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; virtual;
     property OriginalValue: CObject read get_OriginalValue;
@@ -64,7 +64,7 @@ type
   public
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
 
-    procedure BeginEdit; override;
+    procedure BeginEdit(const EditValue: CObject; SetFocus: Boolean); override;
   end;
 
   TTextCellMultilineEditor = class(TCellEditor)
@@ -78,7 +78,7 @@ type
   public
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
 
-    procedure BeginEdit; override;
+    procedure BeginEdit(const EditValue: CObject; SetFocus: Boolean); override;
     function WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; override;
   end;
 
@@ -95,7 +95,7 @@ type
     procedure Dropdown;
   public
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
-    procedure BeginEdit; override;
+    procedure BeginEdit(const EditValue: CObject; SetFocus: Boolean); override;
     function WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; override;
     property ValueChanged: Boolean read _ValueChanged write _ValueChanged;
   end;
@@ -124,7 +124,7 @@ type
     procedure Dropdown;
   public
     constructor Create(AOwner: TComponent; const ACell: ITreeCell); virtual;
-    procedure BeginEdit; override;
+    procedure BeginEdit(const EditValue: CObject; SetFocus: Boolean); override;
     function WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean; override;
 
     property PickList: IList read get_PickList write set_PickList;
@@ -174,9 +174,12 @@ begin
   _Control.Release;
 end;
 
-procedure TCellEditor.BeginEdit;
+procedure TCellEditor.BeginEdit(const EditValue: CObject; SetFocus: Boolean);
 begin
-  _Control.SetFocus;
+  _OriginalValue := EditValue;
+  set_Value(EditValue);
+  if SetFocus then
+    _Control.SetFocus;
 end;
 
 procedure TCellEditor.EndEdit;
@@ -243,9 +246,8 @@ end;
 
 procedure TCellEditor.set_Value(const Value: CObject);
 begin
-  var valueParsed := Value;
-  ParseValue(valueParsed);
-  _OriginalValue := valueParsed;
+//  var valueParsed := Value;
+//  ParseValue(valueParsed);
 end;
 
 function TCellEditor.WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState): Boolean;
@@ -255,7 +257,7 @@ end;
 
 { TTextCellEditor }
 
-procedure TTextCellEditor.BeginEdit;
+procedure TTextCellEditor.BeginEdit(const EditValue: CObject; SetFocus: Boolean);
 begin
   inherited;
   TEdit(_Control).SelectAll;
@@ -296,7 +298,7 @@ end;
 
 { TDateTimeEditor }
 
-procedure TDateTimeEditor.BeginEdit;
+procedure TDateTimeEditor.BeginEdit(const EditValue: CObject; SetFocus: Boolean);
 begin
   inherited;
   Dropdown;
@@ -357,7 +359,7 @@ end;
 
 { TDropDownEditor }
 
-procedure TDropDownEditor.BeginEdit;
+procedure TDropDownEditor.BeginEdit(const EditValue: CObject; SetFocus: Boolean);
 begin
   inherited;
   Dropdown;
@@ -518,7 +520,7 @@ end;
 
 { TTextCellMultilineEditor }
 
-procedure TTextCellMultilineEditor.BeginEdit;
+procedure TTextCellMultilineEditor.BeginEdit(const EditValue: CObject; SetFocus: Boolean);
 begin
   inherited;
   TMemo(_Control).SelectAll;

@@ -10,13 +10,25 @@ uses
   ADato.FMX.Controls.ScrollableRowControl.Impl, ADato.Controls.FMX.Tree.Impl,
   FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
   FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
-  FireDAC.Phys, FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.FMXUI.Wait,
+  FireDAC.Phys, FireDAC.Phys.MSSQLDef, FireDAC.FMXUI.Wait,
   FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FMX.Menus,
   Data.DB, FireDAC.Comp.DataSet, FireDAC.Comp.Client, FMX.ListBox,
   System.ImageList, FMX.ImgList, FMX.ExtCtrls,
   ADato.FMX.Controls.ScrollableControl.Impl, FMX.Edit, System_,
   System.Collections.Generic, FireDAC.Comp.UI, FireDAC.FMXUI.Async,
-  OpenRecordset, FireDAC.FMXUI.Login;
+  OpenRecordset, FireDAC.FMXUI.Login,
+  FireDAC.Phys.MSSQL,
+  FireDAC.Phys.IB,
+  FireDAC.Phys.MySQL,
+  FireDAC.Phys.PG,
+  FireDAC.Phys.FB,
+  FireDAC.Phys.ODBC,
+  FireDAC.Phys.TDBX,
+  FireDAC.Phys.Oracle,
+  FireDAC.Phys.MongoDB, FireDAC.Phys.PGDef, FireDAC.Phys.OracleDef,
+  FireDAC.Phys.FBDef, FireDAC.Phys.IBDef, FireDAC.Phys.ODBCDef,
+  FireDAC.Phys.MongoDBDef, FireDAC.Phys.IBBase, FireDAC.Phys.ODBCBase,
+  FireDAC.Phys.MySQLDef;
 
 type
   {$M+} // Load RTTI information for IDBItem interface
@@ -62,6 +74,14 @@ type
     FDGUIxLoginDialog1: TFDGUIxLoginDialog;
     acExecuteQuery: TAction;
     StyleBook1: TStyleBook;
+    FDPhysMSSQLDriverLink1: TFDPhysMSSQLDriverLink;
+    FDPhysPgDriverLink1: TFDPhysPgDriverLink;
+    FDPhysOracleDriverLink1: TFDPhysOracleDriverLink;
+    FDPhysFBDriverLink1: TFDPhysFBDriverLink;
+    FDPhysIBDriverLink1: TFDPhysIBDriverLink;
+    FDPhysODBCDriverLink1: TFDPhysODBCDriverLink;
+    FDPhysMongoDriverLink1: TFDPhysMongoDriverLink;
+    FDPhysMySQLDriverLink1: TFDPhysMySQLDriverLink;
 
     procedure acAddConnectionExecute(Sender: TObject);
     procedure acExecuteQueryExecute(Sender: TObject);
@@ -84,7 +104,6 @@ type
     LastSearchChange: Integer;
     DatabaseLoading: Boolean;
     TablesLoading: Boolean;
-    SelectedItems: TStringList;
     passwords: TStringList;
     OpenRecordSetCount: INteger;
 
@@ -459,7 +478,6 @@ end;
 function TfrmInspector.GetObjectSource(const Item: IDBItem): string;
 var
   sb: TStringBuilder;
-  v: Variant;
 
 begin
   fdGetSourceQuery.SQL.Text := 'sp_helptext ''' + Item.Name + '''';
@@ -557,7 +575,6 @@ end;
 procedure TfrmInspector.LoadDataBases;
 var
   catalog: string;
-  sl: TStringList;
 
 begin
   DatabaseLoading := True;
@@ -598,9 +615,6 @@ begin
 end;
 
 procedure TfrmInspector.LoadFieldNames;
-var
-  l: Integer;
-
 begin
   var db_item: IDBItem;
 
@@ -679,9 +693,6 @@ begin
 end;
 
 procedure TfrmInspector.LoadIndexes;
-var
-  l: Integer;
-
 begin
   var db_item: IDBItem;
 
