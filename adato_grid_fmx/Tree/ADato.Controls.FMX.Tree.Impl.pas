@@ -2141,7 +2141,8 @@ begin
   _selectInModelTimer.Free;
   set_Model(nil);
 
-  _GridLineStroke.DisposeOf;
+  //_GridLineStroke.Free;
+  // Do not destroy it here, _GridLineStroke is non cloned object directly from style - so FMX will destroy it.
 
  // FreeCachedStyledObjects;
   inherited;
@@ -3012,7 +3013,10 @@ begin
     if RowIndex < 0 then Exit;
 
     // A cell can be selected before the control is initialized !
-    if ((_InternalState - [TreeState.Refresh]) <> []) and (_UpdateCount = 0) then
+    { Fixed: Added "- [TreeState_RowHeightsChanged". User changes a cell and pressed Up key, EditorEnd changes the height of
+      the row. Here, with TreeState_RowHeightsChanged it goes Initialize where Tree resets itself, all rows are removed.
+      Later after EndEdit it calls SelectCell where GetRow(X) returns nil = AV. Alex. }
+    if ((_InternalState - [TreeState.Refresh] - [TreeState_RowHeightsChanged] ) <> []) and (_UpdateCount = 0) then
       Initialize;
 
     // Turn off End key mode
@@ -5138,9 +5142,9 @@ begin
     // Negotiate the final height of the row. This will init and add a row in another paired control (Gantt or Tree)
     if not _SkipRowHeightNegotiation and (_RowHeights <> nil) then
     begin
-      var topRowHeight: Single := 0.0;
-      if _View.Count > 0 then
-        topRowHeight := _View[0].Height;
+//      var topRowHeight: Single := 0.0;
+//      if _View.Count > 0 then
+//        topRowHeight := _View[0].Height;
 
       _RowHeights.NegotiateRowHeight(Self, treeRow, {var} rowHeight);
 
@@ -5199,7 +5203,6 @@ function TCustomTreeControl.InitRowCells(const TreeRow: ITreeRow; const IsCached
 
     if (CellControl.StyleState = TStyleState.Applied) then
     begin
-       {$Message Hint 'Check with custom style, remove  (treeCell.Column.StyleLookup = '') line'}
 
       // frozen cell should be non-transparent or cells scrolled under it would be visible
        if treeCell.Column.Frozen and (treeCell.Column.StyleLookup = '') then
@@ -5629,12 +5632,6 @@ begin
   begin
     _lastUpdatedViewportPosition.Y := MinComp; // Do not use MinSingle because MinSingle < 0 = False!!
     _lastUpdatedViewportPosition.X := ViewportPosition.X; // this will be restored after update
-
-// moved into Initialize proc.
-//    if Flags * [TreeState.RowHeightsChanged] = [] then
-//      if not (TreeOption.PreserveRowHeights in Options) and
-//        ([TreeState.DataChanged, TreeState.ColumnsChanged] * Flags <> []) then
-//        ClearRowHeights;
   end;
 
   _InternalState := _InternalState + Flags; // - TreeState.DataBindingChanged];
@@ -5651,27 +5648,6 @@ begin
     if (ix = _RepaintIndex) and (Content <> nil) then
       Content.Repaint; // Let Initialize do update of internal state
   end);
-
-//  // Reset data connections all-together
-//  if Flags * [TreeState.DataChanged, TreeState.DataBindingChanged] <> [] then
-//  begin
-//    _CellPropertiesProvider := nil;
-//    _dataList := nil;
-//    _dataListTested := False;
-//    if _View <> nil then
-//      _View.Clear;
-//  end
-//
-//  // Data must be sorted again....
-//  else if (_View <> nil) and (Flags * [TreeState.SortChanged] <> []) then
-//    _View.Clear // Show go to a ResetSortOrder method
-//
-//  // Data must be sorted again....
-//  else if (_View <> nil) and (Flags * [TreeState.ColumnsChanged] <> []) then
-//    _View.Clear; // Triggers a rebuild of the current view
-//
-//  _InternalState := _InternalState + Flags; // - TreeState.DataBindingChanged];
-//  Content.Repaint;
 end;
 
 procedure TCustomTreeControl.ResetView(const Full: Boolean = True; const SaveTopRow: Boolean = False;
@@ -6993,8 +6969,7 @@ procedure TCustomTreeControl.EditorKeyDown(Sender: TObject; var Key: Word; var K
 begin
   if (_editor = nil) then exit;
 
-  if Key in [vkLeft, vkRight] then Exit;
-  //if _editor.WantsKey(Key, KeyChar, Shift) then Exit;
+  if _editor.WantsKey(Key, KeyChar, Shift) then Exit;
 
   // Ctrl + Enter - use this keys in multiline editor and do not close it.
   if ([ssCtrl] = Shift) and (Key = vkReturn) then exit;
@@ -7005,28 +6980,17 @@ begin
     TEdit(Sender).Model.SelStart := MaxInt;
 
   case Key of
-  { vkUp, vkDown, vkTab:
-    begin
-      //this will trigger SelectCell > EndEdit in a Tree, EndEdit will be triggered only in case if RowIndex or ColumnIndex were changed
-      // Fixing: when user is pressing UP\Down in editor -do not send KeyDown event to the main KeyDownEvent,
-      // cursor should move in Editor (e.g. multiline)
-      KeyDown(Key, KeyChar, Shift);
-
-      Key := 0;
-    end; }
-
-    {$Message hint 'Code below creates a bug'}
-// in case if user uses MULTILINE EDITOR, he cannot move inside an editor with UP\DOWN keys, because this will close it. Alex
     vkUp, vkDown, vkTab:
     begin
       var storedKey := Key;
       var storedChar := KeyChar;
 
       Key := 0;
-      TThread.ForceQueue(nil, procedure begin
+
+    //  TThread.ForceQueue(nil, procedure begin
         EditorEnd(True); //EndEdit;
         KeyDown(storedKey, storedChar, Shift);
-      end);
+   //   end);
     end;
 
     vkEscape:
@@ -7036,18 +7000,18 @@ begin
       if _editor is TDropDownEditor then
         TDropDownEditor(_editor).SaveData := False;
 
-      TThread.ForceQueue(nil, procedure begin
+     // TThread.ForceQueue(nil, procedure begin
          EditorEnd(False); //EndEdit(False);
-      end);
+    //  end);
     end;
 
     vkReturn:
     begin
       // Need to call EndEdit here, because RowIndex or ColumnIndex were not changed and SelectCell will not not call EndEdit
-      TThread.ForceQueue(nil, procedure begin
+    //  TThread.ForceQueue(nil, procedure begin
        // EndEdit;
         EditorEnd(True);
-      end);
+   //   end);
 
 //      Key := 0;
     end;
@@ -11434,8 +11398,10 @@ end;
 
 procedure TTreeRow.set_Height(const Value: Single);
 begin
-  _Owner.RowHeight[DataItem] := Value;
-  if _Control <> nil then
+  if _Owner.RowHeight[DataItem] <> Value then
+    _Owner.RowHeight[DataItem] := Value;
+
+  if (_Control <> nil) and (_Control.Height <> Value) then
     _Control.Height := Value;
 end;
 

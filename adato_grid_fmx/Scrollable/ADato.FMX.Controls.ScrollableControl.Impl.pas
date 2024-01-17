@@ -376,6 +376,7 @@ function TScrollableControl.GetCB: TRectF;
 begin
   Result := _contentBounds;
 end;
+{$ENDIF}
 
 function TScrollableControl.GetCurrentPackageHInst: HINST;
 { Workaround for issue:
@@ -394,6 +395,7 @@ begin
   Result := HInstance;
 end;
 
+{$IFDEF DEBUG}
 function TScrollableControl.GetVPMax: Single;
 begin
   Result := TScrollableAniCalculations(AniCalculations).MaxTarget.Point.X;
