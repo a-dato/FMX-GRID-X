@@ -5386,7 +5386,8 @@ end;
 
 procedure TDataModelView.InvokeFilterRecord(const Sender: IBaseInterface; e: FilterEventArgs);
 begin
-  _FilterRecord.Invoke(Sender, e);
+  if Assigned(_FilterRecord) then
+    _FilterRecord.Invoke(Sender, e);
 end;
 {$ENDIF}
 

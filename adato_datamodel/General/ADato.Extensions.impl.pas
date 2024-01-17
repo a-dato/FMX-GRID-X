@@ -51,7 +51,7 @@ type
     function  GetPropertyDescriptorType(const AType: &Type) : &Type;
 
     {$IFDEF DOTNET}
-    event OnTypePropertiesChanged: TypePropertiesChangedEventHandler; 
+    event OnTypePropertiesChanged: TypePropertiesChangedEventHandler delegate _onTypePropertiesChanged; 
     {$ENDIF}
   public
     {$IFDEF DELPHI}
@@ -107,7 +107,7 @@ begin
   _CachedProperties := CDictionary<&Type, PropertyInfoArray>.Create(10, TypeEqualityComparer.Create);
   _IsGlobalManager := IsGlobalManager;
 
-  {$IFNDEF LYNXWEB}
+  {$IFDEF DELPHI}
   _OnTypePropertiesChanged := TypePropertiesChangedEventDelegate.Create;
   {$ENDIF}
 end;
@@ -200,8 +200,10 @@ var
   cp: ICustomProperty;
   prop: _PropertyInfo;
 begin
+  {$IFDEF DELPHI}
   if _IsGlobalManager and (_Context <> TGUID.Empty) then
     Exit((_ExtentionManagers[_Context] as ICustomTypeDescriptor).GetCustomProperties(AType));
+  {$ENDIF}
 
   {$IFDEF SCHEDULE_SERVER}
   if _IsGlobalManager then
@@ -225,8 +227,10 @@ function TExtensionManager.GetProperties(const AType: &Type): PropertyInfoArray;
 begin
   MonitorEnter(TObject(_ExtentionManagers));
   try
+    {$IFDEF DELPHI}
     if _IsGlobalManager and (_Context <> TGUID.Empty) then
       Exit((_ExtentionManagers[_Context] as ICustomTypeDescriptor).GetProperties(AType));
+    {$ENDIF}
 
     {$IFDEF SCHEDULE_SERVER}
     if _IsGlobalManager then
@@ -245,6 +249,11 @@ begin
 
     // Get first type for which properties have been defined
     var baseType := AType;
+    {$IFDEF DOTNET}
+    //The reason we cant call baseType.BaseType in .NET is because the BaseType returns implemented interfaces in no particular order.
+    var baseInterfaces := baseType.GetInterfaces;
+    var n := 0;
+    {$ENDIF}
     while baseType <> nil do
     begin
       var ex_props: PropertyInfoArray;
@@ -257,7 +266,14 @@ begin
           Result[i] := ex_props[i - c];
       end;
 
+      {$IFDEF DELPHI}
       baseType := baseType.BaseType;
+      {$ELSE}
+      if n = baseInterfaces.Length then
+        baseType := nil else
+        baseType := baseInterfaces[n];
+      inc(n);
+      {$ENDIF}
     end;
 
     _CachedProperties.Add(AType, Result);
@@ -271,12 +287,23 @@ begin
   MonitorEnter(TObject(_ExtentionManagers));
   try
     var baseType := AType;
+    {$IFDEF DOTNET}
+    var baseInterfaces := baseType.GetInterfaces;
+    var n := 0;
+    {$ENDIF}
     while baseType <> nil do
     begin
       if _CachedProperties.ContainsKey(baseType) then
         _CachedProperties.Remove(baseType);
 
+      {$IFDEF DELPHI}
       baseType := baseType.BaseType;
+      {$ELSE}
+      if n = baseInterfaces.Length then
+        baseType := nil else
+        baseType := baseInterfaces[n];
+      inc(n);
+      {$ENDIF}
     end;
   finally
     MonitorExit(TObject(_ExtentionManagers));

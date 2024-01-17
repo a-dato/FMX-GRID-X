@@ -116,7 +116,7 @@ type
     {$ENDIF}
   end;
 
-  TObjectModelPropertyWrapper = class({$IFDEF DELPHI}TBaseInterfacedObject, _PropertyInfo{$ELSE}TPropertyInfo, ITBaseInterfacedObject{$ENDIF}, IObjectModelProperty)
+  TObjectModelPropertyWrapper = class({$IFDEF DELPHI}TBaseInterfacedObject, _PropertyInfo{$ELSE}CPropertyInfo, ITBaseInterfacedObject{$ENDIF}, IObjectModelProperty)
   public
     FContainedProperty: _PropertyInfo;
     FBindings: List<IPropertyBinding>;
@@ -517,7 +517,7 @@ begin
     {$IFDEF DELPHI}
     ExtensionManager.OnTypePropertiesChanged.Add(TypePropertiesChanged);
     {$ELSE}
-    ExtensionManager.OnTypePropertiesChanged += TypePropertiesChanged;
+    ExtensionManager.OnTypePropertiesChanged += @TypePropertiesChanged;
     {$ENDIF}
   end;
 end;
@@ -529,7 +529,7 @@ begin
     {$IFDEF DELPHI}
     ExtensionManager.OnTypePropertiesChanged.Remove(TypePropertiesChanged);
     {$ELSE}
-    ExtensionManager.OnTypePropertiesChanged -= TypePropertiesChanged;
+    ExtensionManager.OnTypePropertiesChanged -= @TypePropertiesChanged;
     {$ENDIF}
   end;
   inherited;
@@ -561,11 +561,7 @@ begin
   begin
     var props: PropertyInfoArray;
     if GlobalTypeDescriptor <> nil then
-      {$IFDEF DELPHI}
       props := GlobalTypeDescriptor.GetProperties(_ObjectType) 
-      {$ELSE}
-      props := GlobalTypeDescriptor.GetProperties(TypeExtensions(_ObjectType).DelegatedType) 
-      {$ENDIF}
     else
       props := GetPropertiesFromType(_ObjectType,
           function(const OwnerType: &Type; const PropertyType: &Type; PropInfo: IPropInfo) : _PropertyInfo begin

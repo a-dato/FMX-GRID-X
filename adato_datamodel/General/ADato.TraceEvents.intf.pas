@@ -4,11 +4,12 @@ unit ADato.TraceEvents.intf;
 
 interface
 
-{$IFDEF DELPHI}
-uses 
+uses
+  {$IFDEF DELPHI}
   System.Classes, 
-  System.SysUtils, System_;
-{$ENDIF}
+  System.SysUtils,
+  {$ENDIF}
+  System_;
 
 const
   CCPM = 'CCPM';
@@ -220,7 +221,8 @@ procedure TEmptyEventTracer.TraceMessageParts(const Group: string; const Message
 begin
   var Messages := MessagesFunc();
   var AMessage := '';
-  for var i := Low(Messages) to High(Messages) do
+  var i: Integer;
+  for i := Low(Messages) to High(Messages) do
   begin
     AMessage := AMessage.PadRight(i*25) + Messages[i].ToString();
   end;
