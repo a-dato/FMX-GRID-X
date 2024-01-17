@@ -29,8 +29,7 @@ type
     DataSource1: TDataSource;
     Logging: TMemo;
     ActionList1: TActionList;
-    Execute: TAction;
-    SpeedButton1: TSpeedButton;
+    btnExecute: TSpeedButton;
     DatasetDataModel1: TDatasetDataModel;
     Button1: TButton;
     acAbort: TAction;
@@ -43,7 +42,7 @@ type
     Label1: TLabel;
     procedure acAbortExecute(Sender: TObject);
     procedure acNextRecordSetExecute(Sender: TObject);
-    procedure ExecuteExecute(Sender: TObject);
+
   private
     FStopWatch: TStopWatch;
     FQueryEditorHeight: Single;
@@ -58,6 +57,7 @@ type
     procedure UpdateDialogControls(IsSqlSourceWindow: Boolean);
   public
     { Public declarations }
+    procedure ExecuteQuery;
     property CommandText: string read get_CommandText write set_CommandText;
     property SqlSourceText: string read get_CommandText write set_SqlSourceText;
   end;
@@ -84,7 +84,7 @@ begin
   end);
 end;
 
-procedure TOpenRecordSetFrame.ExecuteExecute(Sender: TObject);
+procedure TOpenRecordSetFrame.ExecuteQuery;
 begin
   FStopWatch := TStopwatch.StartNew;
 

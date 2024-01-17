@@ -60,8 +60,11 @@ type
     SpeedButton4: TSpeedButton;
     acAddConnection: TAction;
     FDGUIxLoginDialog1: TFDGUIxLoginDialog;
+    acExecuteQuery: TAction;
+    StyleBook1: TStyleBook;
 
     procedure acAddConnectionExecute(Sender: TObject);
+    procedure acExecuteQueryExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure acOpenObjectExecute(Sender: TObject);
     procedure acRefreshExecute(Sender: TObject);
@@ -94,16 +97,17 @@ type
     function  GetObjectSource(const Item: IDBItem) : string;
     procedure OpenObject(const Item: IDBItem; SqlSource: string = '');
     procedure ExportClicked(Sender: TObject);
-    procedure ShowHint(Sender: TObject);
     procedure LoadInspectorIniFile;
     procedure LoadFieldNames;
     procedure LoadIndexes;
     function  LoadIndexFields(const Table: IDBItem; const Index: IDBItem) : List<IDBItem>;
-    function GetCatalogName: string;
+    function  GetCatalogName: string;
+    procedure TabCloseButtonClicked(Sender: TObject);
+    procedure UpdateTabText(Tab: TTabItem; Text: string);
 
   protected
     function GetConnectionText: string;
-    procedure IntializeFrameForTab(Tab: TTabItem);
+    procedure InitializeFrameForTab(Tab: TTabItem);
     procedure UpdateConnectionForTab(Tab: TTabItem; OverrideExistingConnection: Boolean);
   public
     { Public declarations }
@@ -168,7 +172,7 @@ implementation
 
 {$R *.fmx}
 
-uses Login, FireDAC.VCLUI.ConnEdit;
+uses Login, FireDAC.VCLUI.ConnEdit, System.Rtti, System.Math;
 
 procedure TfrmInspector.acAddConnectionExecute(Sender: TObject);
 var
@@ -197,11 +201,18 @@ begin
   end;
 end;
 
+procedure TfrmInspector.acExecuteQueryExecute(Sender: TObject);
+begin
+  var tab := tcRecordSets.ActiveTab;
+  if tab.TagObject is TOpenRecordSetFrame then
+    (tab.TagObject as TOpenRecordSetFrame).ExecuteQuery;
+end;
+
 procedure TfrmInspector.FormCreate(Sender: TObject);
 begin
   tcColumns.TabIndex := 0;
   tcRecordSets.TabIndex := 0;
-  IntializeFrameForTab(FirstTab);
+  InitializeFrameForTab(FirstTab);
   LoadInspectorIniFile;
 end;
 
@@ -499,16 +510,37 @@ begin
     Result := 'Not conected';
 end;
 
-procedure TfrmInspector.IntializeFrameForTab(Tab: TTabItem);
+procedure TfrmInspector.TabCloseButtonClicked(Sender: TObject);
+begin
+  if Sender is TSpeedButton then
+  begin
+    var activeIndex := tcRecordSets.TabIndex;
+    var p := (Sender as TSpeedButton).Parent;
+    while not (p is TTabItem) do
+      p := p.Parent;
+
+    tcRecordSets.RemoveObject(p);
+    p.Free;
+
+    // Must always reset TabIndex to re-activate page
+    activeIndex := Min(tcRecordSets.TabCount - 2, activeIndex);
+    tcRecordSets.TabIndex := activeIndex;
+  end;
+end;
+
+procedure TfrmInspector.InitializeFrameForTab(Tab: TTabItem);
 begin
   inc(OpenRecordSetCount);
 
-  var frame := TOpenRecordSetFrame.Create(Self);
+  var frame := TOpenRecordSetFrame.Create(Tab);
   frame.Name := 'OpenRecordSetFrame_' + OpenRecordSetCount.ToString;
   frame.Align := TAlignLayout.Client;
+  frame.btnExecute.Action := acExecuteQuery;
 
   Tab.AddObject(frame);
   Tab.TagObject := frame;
+  Tab.StyleLookup := 'CloseButtonStyle';
+  (Tab as TStyledControl).StylesData['CloseButton.OnClick'] := TValue.From<TNotifyEvent>(TabCloseButtonClicked);
 end;
 
 procedure TfrmInspector.UpdateConnectionForTab(Tab: TTabItem; OverrideExistingConnection: Boolean);
@@ -825,7 +857,7 @@ begin
   frame.fdConnection.OnLogin := fdConnectionLogin;
 
   frame.lblConnection.Text := GetConnectionText;
-  tab.Text := Item.Name;
+  UpdateTabText(tab, Item.Name);
 
   if SqlSource <> '' then
     frame.SqlSourceText := SqlSource
@@ -883,25 +915,29 @@ begin
   end;
 end;
 
-procedure TfrmInspector.ShowHint(Sender: TObject);
+procedure TfrmInspector.UpdateTabText(Tab: TTabItem; Text: string);
 begin
-
+  Tab.AutoSize := False;
+  Tab.Text := Text;
+  Tab.Width := Canvas.TextWidth(Text) + 30;
+  Tab.Height := 26;
 end;
 
 procedure TfrmInspector.tbAddNewTabClick(Sender: TObject);
 begin
   // Convert 'Add' tab into a tab with record set
   var tab := Sender as TTabItem;
-  tab.Text := '<unknown>';
+  tab.Width := Canvas.TextWidth('<unknown>') + 30;
+  UpdateTabText(tab, '<unknown>');
   tab.OnClick := nil;
-  IntializeFrameForTab(tab);
+  InitializeFrameForTab(tab);
   UpdateConnectionForTab(tab, True);
 
-  var addTab := TTabItem.Create(tcRecordSets);
-  addTab.Text := '+';
-  addTab.Index := tab.Index + 1;
-  addTab.OnClick := tbAddNewTabClick;
-  tcRecordSets.AddObject(addTab);
+  var newTab := TTabItem.Create(tcRecordSets);
+  newTab.Text := '+';
+  newTab.Index := tab.Index + 1;
+  newTab.OnClick := tbAddNewTabClick;
+  tcRecordSets.AddObject(newTab);
 end;
 
 procedure TfrmInspector.Timer1Timer(Sender: TObject);
