@@ -660,7 +660,7 @@ begin
   if Data.IsInterface then
     VariantData := Interfaces.ToInterface(Data) // Data.ToString
 
-  else if Data.GetType.Equals(Global.StringType) then
+  else if Data.IsString then
   begin
     if CString.IsNullOrEmpty(Data.ToString) then
       VariantData := Null

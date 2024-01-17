@@ -1,0 +1,393 @@
+object frmInspector: TfrmInspector
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 658
+  ClientWidth = 1081
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = MostLeft
+    Position.Y = 25.000000000000000000
+    Size.Width = 257.000000000000000000
+    Size.Height = 633.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    object DBTables: TFMXTreeControl
+      Align = Top
+      Position.Y = 49.000000000000000000
+      Size.Width = 257.000000000000000000
+      Size.Height = 263.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      AcceptsTab = False
+      AcceptsReturn = False
+      AllowUserToAddRows = True
+      AllowUserToDeleteRows = True
+      AutoFitColumns = True
+      Indent = 20
+      AlwaysShowFocus = False
+      IncrementalSearch = False
+      Options = [TreeOption_ShowHeaders, TreeOption_AutoCommit, TreeOption_AllowCellSelection, TreeOption_AlternatingRowBackground, TreeOption_ShowDragImage, TreeOption_CheckPropertyNames, TreeOption_MultiSelect, TreeOption_GoRowSelection, TreeOption_ColumnsCanResize, TreeOption_ColumnsCanMove, TreeOption_RefreshOnEndEdit]
+      ScrollPerRow = False
+      DefaultExpandRows = False
+      HighlightRows = True
+      CellChanged = DBTablesCellChanged
+      Viewport.Width = 255.000000000000000000
+      Viewport.Height = 236.000000000000000000
+    end
+    object Splitter1: TSplitter
+      Align = Top
+      Cursor = crVSplit
+      MinSize = 20.000000000000000000
+      Position.Y = 312.000000000000000000
+      Size.Width = 257.000000000000000000
+      Size.Height = 7.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object tcColumns: TTabControl
+      Align = Client
+      Size.Width = 257.000000000000000000
+      Size.Height = 314.000000000000000000
+      Size.PlatformDefault = False
+      TabIndex = 2
+      TabOrder = 2
+      TabPosition = PlatformDefault
+      Sizes = (
+        257s
+        288s
+        257s
+        288s
+        257s
+        288s)
+      object tbFields: TTabItem
+        CustomIcon = <
+          item
+          end>
+        TextSettings.Trimming = None
+        IsSelected = False
+        Size.Width = 51.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = 'Fields'
+        ExplicitSize.cx = 51.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+        object DBColumns: TFMXTreeControl
+          Align = Client
+          Size.Width = 257.000000000000000000
+          Size.Height = 288.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          AcceptsTab = False
+          AcceptsReturn = False
+          AllowUserToAddRows = True
+          AllowUserToDeleteRows = True
+          AutoFitColumns = False
+          Indent = 20
+          AlwaysShowFocus = False
+          IncrementalSearch = False
+          Options = [TreeOption_ShowHeaders, TreeOption_AutoCommit, TreeOption_AllowCellSelection, TreeOption_AlternatingRowBackground, TreeOption_ShowDragImage, TreeOption_CheckPropertyNames, TreeOption_MultiSelect, TreeOption_GoRowSelection, TreeOption_ColumnsCanResize, TreeOption_ColumnsCanMove, TreeOption_RefreshOnEndEdit]
+          ScrollPerRow = False
+          DefaultExpandRows = False
+          HighlightRows = True
+          Viewport.Width = 255.000000000000000000
+          Viewport.Height = 261.000000000000000000
+        end
+      end
+      object tbIndexes: TTabItem
+        CustomIcon = <
+          item
+          end>
+        TextSettings.Trimming = None
+        IsSelected = False
+        Size.Width = 61.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = 'Indexes'
+        ExplicitSize.cx = 61.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+        object DBIndexes: TFMXTreeControl
+          Align = Client
+          Size.Width = 257.000000000000000000
+          Size.Height = 288.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          AcceptsTab = False
+          AcceptsReturn = False
+          AllowUserToAddRows = True
+          AllowUserToDeleteRows = True
+          AutoFitColumns = False
+          Indent = 20
+          AlwaysShowFocus = False
+          IncrementalSearch = False
+          Options = [TreeOption_ShowHeaders, TreeOption_AutoCommit, TreeOption_AllowCellSelection, TreeOption_AlternatingRowBackground, TreeOption_ShowDragImage, TreeOption_CheckPropertyNames, TreeOption_MultiSelect, TreeOption_GoRowSelection, TreeOption_ColumnsCanResize, TreeOption_ColumnsCanMove, TreeOption_RefreshOnEndEdit]
+          ScrollPerRow = False
+          DefaultExpandRows = False
+          HighlightRows = True
+          CellChanged = DBIndexesCellChanged
+          Viewport.Width = 255.000000000000000000
+          Viewport.Height = 261.000000000000000000
+        end
+      end
+      object tbIndexFields: TTabItem
+        CustomIcon = <
+          item
+          end>
+        TextSettings.Trimming = None
+        IsSelected = True
+        Size.Width = 79.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = 'IndexFields'
+        ExplicitSize.cx = 79.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+        object DBIndexColumns: TFMXTreeControl
+          Align = Client
+          Size.Width = 257.000000000000000000
+          Size.Height = 288.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          AcceptsTab = False
+          AcceptsReturn = False
+          AllowUserToAddRows = True
+          AllowUserToDeleteRows = True
+          AutoFitColumns = False
+          Indent = 20
+          AlwaysShowFocus = False
+          IncrementalSearch = False
+          Options = [TreeOption_ShowHeaders, TreeOption_AutoCommit, TreeOption_AllowCellSelection, TreeOption_AlternatingRowBackground, TreeOption_ShowDragImage, TreeOption_CheckPropertyNames, TreeOption_MultiSelect, TreeOption_GoRowSelection, TreeOption_ColumnsCanResize, TreeOption_ColumnsCanMove, TreeOption_RefreshOnEndEdit]
+          ScrollPerRow = False
+          DefaultExpandRows = False
+          HighlightRows = True
+          Viewport.Width = 255.000000000000000000
+          Viewport.Height = 261.000000000000000000
+        end
+      end
+    end
+    object Layout3: TLayout
+      Align = MostTop
+      Size.Width = 257.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      object edSearch: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        Align = Client
+        TabOrder = 3
+        Size.Width = 257.000000000000000000
+        Size.Height = 24.000000000000000000
+        Size.PlatformDefault = False
+        OnChangeTracking = edSearchChangeTracking
+      end
+      object lyButtons: TLayout
+        Align = Top
+        Size.Width = 257.000000000000000000
+        Size.Height = 25.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        object SpeedButton1: TSpeedButton
+          Action = acOpenObject
+          Align = Left
+          ImageIndex = -1
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'nexttoolbutton'
+          TextSettings.Trimming = None
+        end
+        object SpeedButton2: TSpeedButton
+          Action = acViewSource
+          Align = Left
+          ImageIndex = -1
+          Position.X = 41.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'pagecurltoolbutton'
+          TextSettings.Trimming = None
+        end
+        object SpeedButton3: TSpeedButton
+          Action = acRefresh
+          Align = Left
+          ImageIndex = -1
+          Position.X = 82.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'refreshtoolbutton'
+          TextSettings.Trimming = None
+        end
+      end
+    end
+  end
+  object Layout2: TLayout
+    Align = Client
+    Size.Width = 816.000000000000000000
+    Size.Height = 633.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 7
+    object tcRecordSets: TTabControl
+      Align = Client
+      Size.Width = 816.000000000000000000
+      Size.Height = 633.000000000000000000
+      Size.PlatformDefault = False
+      TabIndex = 1
+      TabOrder = 0
+      TabPosition = PlatformDefault
+      Sizes = (
+        816s
+        607s
+        816s
+        607s)
+      object FirstTab: TTabItem
+        CustomIcon = <
+          item
+          end>
+        TextSettings.Trimming = None
+        IsSelected = False
+        Size.Width = 86.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = '<unknown>'
+        ExplicitSize.cx = 69.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+      end
+      object tbAddNewTab: TTabItem
+        CustomIcon = <
+          item
+          end>
+        TextSettings.Trimming = None
+        IsSelected = True
+        Size.Width = 29.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = '+'
+        OnClick = tbAddNewTabClick
+        ExplicitSize.cx = 29.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+      end
+    end
+  end
+  object Splitter2: TSplitter
+    Align = Left
+    Cursor = crHSplit
+    MinSize = 20.000000000000000000
+    Position.X = 257.000000000000000000
+    Position.Y = 25.000000000000000000
+    Size.Width = 8.000000000000000000
+    Size.Height = 633.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Layout4: TLayout
+    Align = MostTop
+    Size.Width = 1081.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 14
+    object cbConnections: TComboBox
+      Align = Left
+      Size.Width = 327.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      OnChange = cbConnectionsChange
+    end
+    object cbDataBases: TComboBox
+      Align = Left
+      Position.X = 327.000000000000000000
+      Size.Width = 157.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      OnChange = cbDataBasesChange
+    end
+    object SpeedButton4: TSpeedButton
+      Action = acAddConnection
+      Align = Left
+      ImageIndex = -1
+      Position.X = 484.000000000000000000
+      Size.Width = 41.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'addtoolbuttonbordered'
+      TextSettings.Trimming = None
+    end
+  end
+  object Timer1: TTimer
+    Interval = 400
+    OnTimer = Timer1Timer
+    Left = 104
+    Top = 352
+  end
+  object ActionList1: TActionList
+    Left = 176
+    Top = 136
+    object acDisconnect: TAction
+      Text = 'Disconnect'
+    end
+    object acOpenObject: TAction
+      Text = 'acOpenObject'
+      OnExecute = acOpenObjectExecute
+    end
+    object acViewSource: TAction
+      Text = 'acViewSource'
+      OnExecute = acViewSourceExecute
+    end
+    object acRefresh: TAction
+      Text = 'acRefresh'
+      OnExecute = acRefreshExecute
+    end
+    object acAddConnection: TAction
+      Text = 'acAddConnection'
+      OnExecute = acAddConnectionExecute
+    end
+  end
+  object fdConnection: TFDConnection
+    Params.Strings = (
+      
+        'Database=C:\Users\info\AppData\Local\A-Dato\Databases\localdb_B1' +
+        '0E9F_2.db'
+      'User_Name=ad.vermeulen@a-dato.com'
+      'DriverID=MSSQL')
+    ResourceOptions.AssignedValues = [rvAutoReconnect]
+    ResourceOptions.AutoReconnect = True
+    OnLogin = fdConnectionLogin
+    Left = 104
+    Top = 136
+  end
+  object fdMetaInfoQuery: TFDMetaInfoQuery
+    FilterOptions = [foCaseInsensitive]
+    Connection = fdConnection
+    Left = 104
+    Top = 184
+  end
+  object fdGetSourceQuery: TFDQuery
+    Connection = fdConnection
+    Left = 104
+    Top = 240
+  end
+  object ImageList1: TImageList
+    Source = <>
+    Destination = <>
+    Left = 104
+    Top = 296
+  end
+  object FDGUIxLoginDialog1: TFDGUIxLoginDialog
+    Provider = 'FMX'
+    Left = 224
+    Top = 186
+  end
+end
