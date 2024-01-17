@@ -106,11 +106,9 @@ type
   CObservableCollectionSerializable<T: IBaseInterface> = class(CObservableCollection<T>, ISerializable)
     _saveTypeData: Boolean;
 
-    {$IFDEF DELPHI}
     // ISerializable
     procedure GetObjectData(const info: SerializationInfo; const context: StreamingContext);
     procedure SetObjectData(const info: SerializationInfo; const context: StreamingContext);
-    {$ENDIF}
 
     property  SaveTypeData   : Boolean
       read  _saveTypeData
@@ -404,12 +402,15 @@ begin
   OnPropertyChanged(pArgs);
 end;
 
-{$IFDEF DELPHI}
 procedure CObservableCollectionSerializable<T>.GetObjectData(
   const info: SerializationInfo;
   const context: StreamingContext);
 begin
+  {$IFDEF DELPHI}
   info.AddValue(nil, Self as IList, _saveTypeData);
+  {$ELSE}
+  info.AddValue(nil, Self as IList);
+  {$ENDIF}
 end;
 
 procedure CObservableCollectionSerializable<T>.SetObjectData(
@@ -418,6 +419,7 @@ procedure CObservableCollectionSerializable<T>.SetObjectData(
 var
   tmp: IList;
 begin
+  {$IFDEF DELPHI}
   inc(_UpdateCount);
   try
     if Interfaces.Supports(Self, IList, tmp) then
@@ -427,8 +429,9 @@ begin
   end;
 
   OnCollectionReset;
+  {$ELSE}
+  {$ENDIF}
 end;
-{$ENDIF}
 
 constructor CObservableCollectionEx<T>.Create;
 begin

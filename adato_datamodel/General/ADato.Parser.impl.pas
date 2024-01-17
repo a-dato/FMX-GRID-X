@@ -2694,7 +2694,7 @@ begin
     begin
       prop := FContextType.PropertyByName(svalue);
       if (prop <> nil) and not Result.Contains(prop) then
-        Result.Add(prop);
+      Result.Add(prop);
     end;
 
     oldSValue := svalue;
@@ -3207,7 +3207,11 @@ begin
 //      Result := Extended(Value1) > Extended(Value2);
 //    end;
     TypeCode.DateTime:  Result := CDateTime(Value1) > CDateTime(Value2);
+    {$IFDEF DELPHI}
     TypeCode.Record:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) > CTimeSpan(Value2));
+    {$ELSE}
+    TypeCode.Object:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) > CTimeSpan(Value2));
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3234,6 +3238,7 @@ begin
 //      Result := Extended(Value1) = Extended(Value2);
 //    end;
     TypeCode.DateTime:  Result := CDateTime(Value1) = CDateTime(Value2);
+    {$IFDEF DELPHI}
     TypeCode.Record:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) = CTimeSpan(Value2));
 
     TypeCode.String: Result := CString.Equals(Value1.ToString, Value2.ToString);
@@ -3243,6 +3248,10 @@ begin
        // Result := CObject.Equals(Value1, Value2);
       Result := CString.Equals(Value1.ToString, Value2.ToString);
     end
+    {$ELSE}
+    TypeCode.Object:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) = CTimeSpan(Value2));
+    TypeCode.String:    Result := CString.Equals(Value1.ToString, Value2.ToString);
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3267,7 +3276,11 @@ begin
 //      Result := Extended(Value1) >= Extended(Value2);
 //    end;
     TypeCode.DateTime:  Result := CDateTime(Value1) >= CDateTime(Value2);
+    {$IFDEF DELPHI}
     TypeCode.Record:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) >= CTimeSpan(Value2));
+    {$ELSE}
+    TypeCode.Object:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) >= CTimeSpan(Value2));
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3292,7 +3305,11 @@ begin
 //      Result := Extended(Value1) <= Extended(Value2);
 //    end;
     TypeCode.DateTime:  Result := CDateTime(Value1) <= CDateTime(Value2);
+    {$IFDEF DELPHI}
     TypeCode.Record:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) <= CTimeSpan(Value2));
+    {$ELSE}
+    TypeCode.Object:    Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) <= CTimeSpan(Value2));
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3317,7 +3334,11 @@ begin
 //      Result := Extended(Value1) < Extended(Value2);
 //    end;
     TypeCode.DateTime:  Result := CDateTime(Value1) < CDateTime(Value2);
+    {$IFDEF DELPHI}
     TypeCode.Record:  Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) < CTimeSpan(Value2));
+    {$ELSE}
+    TypeCode.Object:  Result := Value1.GetType.IsOfType<CTimeSpan> and (CTimeSpan(Value1) < CTimeSpan(Value2));
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3392,12 +3413,21 @@ begin
     TypeCode.Double:    Result := Double(Value1) - Double(Value2);
 //    TypeCode.Decimal:   Result := Extended(Value1) - Extended(Value2);
     TypeCode.DateTime:  Result := CDateTime(Value1).Subtract(CDateTime(Value2));
+    {$IFDEF DELPHI}
     TypeCode.Record:
     begin
       if Value1.GetType.IsOfType<CTimespan> then
         Result := CTimeSpan(Value1).Subtract(CTimeSpan(Value2)) else
         raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
     end
+    {$ELSE}
+    TypeCode.Object:
+    begin
+      if Value1.GetType.IsOfType<CTimespan> then
+        Result := CTimeSpan(Value1).Subtract(CTimeSpan(Value2)) else
+        raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
+    end
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3484,6 +3514,7 @@ begin
     end;
 //    TypeCode.Decimal:  Result := Extended(Value1) * Extended(Value2);
     TypeCode.DateTime:  Result := CDateTime(Value1).Ticks * CDateTime(Value2).Ticks;
+    {$IFDEF DELPHI}
     TypeCode.Record:
     begin
       if Value1.GetType.IsOfType<CTimespan> then
@@ -3500,6 +3531,24 @@ begin
           end;
         end;
     end
+    {$ELSE}
+    TypeCode.Object:
+    begin
+      if Value1.GetType.IsOfType<CTimespan> then
+        case &Type.GetTypeCode(Value2.GetType) of
+          TypeCode.Double:
+            Result := CTimeSpan(Value1) * CDouble(Value2);
+//          TypeCode.Decimal:
+//            Result := CTimeSpan(Value1) * CExtended(Value2);
+          TypeCode.Object:
+          begin
+            if Value2.GetType.IsOfType<CTimespan> then
+              Result := CTimeSpan.Create(CTimeSpan(Value1).Ticks * CTimeSpan(Value2).Ticks) else
+              Result := CTimeSpan.Create(0);
+          end;
+        end;
+    end
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3528,6 +3577,7 @@ begin
     end;
 //    TypeCode.Decimal:   Result := Extended(Value1) / Extended(Value2);
     TypeCode.DateTime:  Result := CDateTime(Value1).Ticks / CDateTime(Value2).Ticks;
+    {$IFDEF DELPHI}
     TypeCode.Record:
     begin
       if Value1.GetType.IsOfType<CTimespan> then
@@ -3542,6 +3592,22 @@ begin
           end;
         end;
     end
+    {$ELSE}
+    TypeCode.Object:
+    begin
+      if Value1.GetType.IsOfType<CTimespan> then
+        case &Type.GetTypeCode(Value2.GetType) of
+          TypeCode.Double:
+            Result := CTimeSpan(Value1) / CDouble(Value2);
+          TypeCode.Object:
+          begin
+            if Value2.GetType.IsOfType<CTimespan> then
+              Result := CTimeSpan(Value1).Ticks / CTimeSpan(Value2).Ticks else
+              Result := 0;
+          end;
+        end;
+    end
+    {$ENDIF}
   else
     raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
   end;
@@ -3685,6 +3751,7 @@ begin
         Result := Value1.AsType<CDateTime>.AddTicks(dt.Ticks) else
         Result := Value1;
 
+    {$IFDEF DELPHI}
     TypeCode.Record:
       if Value1.GetType.IsOfType<CTimeSpan> and Value2.TryAsType<CTimeSpan>(ts) then
         Result := Value1.AsType<CTimeSpan>.Add(ts)
@@ -3692,6 +3759,15 @@ begin
         Result := Value1
       else
         raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
+    {$ELSE}
+    TypeCode.Object:
+      if Value1.GetType.IsOfType<CTimeSpan> and Value2.TryAsType<CTimeSpan>(ts) then
+        Result := Value1.AsType<CTimeSpan>.Add(ts)
+      else if Value1.GetType.IsOfType<CTimeSpan> then
+        Result := Value1
+      else
+        raise ECalculate.Create(CString.Format('Unsuported type in formula: ''{0}''', Value1.GetType));
+    {$ENDIF}
 
     TypeCode.String:
       if ConvertToNumber then
@@ -3723,6 +3799,7 @@ begin
 //      Result := d > 0;
 //    end;
     TypeCode.DateTime: Result := not CDateTime(Value).Equals(CDateTime.MinValue);
+    {$IFDEF DELPHI}
     TypeCode.Record:
     begin
       if Value.GetType.IsOfType<CTimeSpan> then
@@ -3732,6 +3809,17 @@ begin
           Result := False;
         end;
     end;
+    {$ELSE}
+    TypeCode.Object:
+    begin
+      if Value.GetType.IsOfType<CTimeSpan> then
+        Result := not CTimeSpan(Value).Equals(CTimeSpan.Zero) else
+        begin
+          Assert(False, 'what to do here?');
+          Result := False;
+        end;
+    end;
+    {$ENDIF}
     TypeCode.String:
     begin
       s := Value.ToString;
@@ -3767,12 +3855,21 @@ begin
 //      Result := d;
 //    end;
     TypeCode.DateTime: Result := CDateTime(Value).Ticks;
+    {$IFDEF DELPHI}
     TypeCode.Record:
     begin
       if Value.GetType.IsOfType<CTimeSpan> then
         Result := CTimeSpan(Value).Ticks else
         Result := 0;
     end;
+    {$ELSE}
+    TypeCode.Object:
+    begin
+      if Value.GetType.IsOfType<CTimeSpan> then
+        Result := CTimeSpan(Value).Ticks else
+        Result := 0;
+    end;
+    {$ENDIF}
     TypeCode.String:
       if not CDouble.TryParse(Value.ToString, Result) then
         Result := 0;
@@ -3800,12 +3897,21 @@ begin
 //      Result := Extended(Value);
 //    end;
     TypeCode.DateTime: Result := CDateTime(Value).Ticks;
+    {$IFDEF DELPHI}
     TypeCode.Record:
     begin
       if Value.GetType.IsOfType<CTimeSpan> then
         Result := CTimeSpan(Value).Ticks else
         Result := 0;
     end;
+    {$ELSE}
+    TypeCode.Object:
+    begin
+      if Value.GetType.IsOfType<CTimeSpan> then
+        Result := CTimeSpan(Value).Ticks else
+        Result := 0;
+    end;
+    {$ENDIF}
     TypeCode.String:
       if not Extended.TryParse(Value.ToString, Result) then
         Result := 0;
