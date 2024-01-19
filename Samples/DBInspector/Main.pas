@@ -82,9 +82,13 @@ type
     FDPhysODBCDriverLink1: TFDPhysODBCDriverLink;
     FDPhysMongoDriverLink1: TFDPhysMongoDriverLink;
     FDPhysMySQLDriverLink1: TFDPhysMySQLDriverLink;
+    edSchema: TEdit;
+    SpeedButton5: TSpeedButton;
+    acMoveData: TAction;
 
     procedure acAddConnectionExecute(Sender: TObject);
     procedure acExecuteQueryExecute(Sender: TObject);
+    procedure acMoveDataExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure acOpenObjectExecute(Sender: TObject);
     procedure acRefreshExecute(Sender: TObject);
@@ -98,6 +102,7 @@ type
     procedure DBTablesCellChanged(Sender: TCustomTreeControl; e:
         CellChangedEventArgs);
     procedure edSearchChangeTracking(Sender: TObject);
+    procedure fdConnectionAfterConnect(Sender: TObject);
     procedure tbAddNewTabClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -191,7 +196,7 @@ implementation
 
 {$R *.fmx}
 
-uses Login, FireDAC.VCLUI.ConnEdit, System.Rtti, System.Math;
+uses Login, FireDAC.VCLUI.ConnEdit, System.Rtti, System.Math, CopyData;
 
 procedure TfrmInspector.acAddConnectionExecute(Sender: TObject);
 var
@@ -225,6 +230,32 @@ begin
   var tab := tcRecordSets.ActiveTab;
   if tab.TagObject is TOpenRecordSetFrame then
     (tab.TagObject as TOpenRecordSetFrame).ExecuteQuery;
+end;
+
+procedure TfrmInspector.acMoveDataExecute(Sender: TObject);
+begin
+  // Convert 'Add' tab into a tab with record set
+  var tab := tcRecordSets.Tabs[tcRecordSets.TabCount - 1];
+  UpdateTabText(tab, 'Copy Data');
+  tab.OnClick := nil;
+
+  inc(OpenRecordSetCount);
+
+  var frame := TfrmCopyData.Create(Tab);
+  frame.Name := 'CopyData_' + OpenRecordSetCount.ToString;
+  frame.Align := TAlignLayout.Client;
+  frame.RefreshConnections;
+
+  tab.AddObject(frame);
+  tab.TagObject := frame;
+  tab.StyleLookup := 'CloseButtonStyle';
+  (tab as TStyledControl).StylesData['CloseButton.OnClick'] := TValue.From<TNotifyEvent>(TabCloseButtonClicked);
+
+  var newTab := TTabItem.Create(tcRecordSets);
+  newTab.Text := '+';
+  newTab.Index := tab.Index + 1;
+  newTab.OnClick := tbAddNewTabClick;
+  tcRecordSets.AddObject(newTab);
 end;
 
 procedure TfrmInspector.FormCreate(Sender: TObject);
@@ -517,6 +548,11 @@ begin
   LastSearchChange := Environment.TickCount;
 end;
 
+procedure TfrmInspector.fdConnectionAfterConnect(Sender: TObject);
+begin
+  edSchema.Text := fdConnection.CurrentSchema;
+end;
+
 function TfrmInspector.GetConnectionText: string;
 begin
   if fdConnection.Connected then
@@ -629,7 +665,7 @@ begin
     begin
       fdMetaInfoQuery.Filtered := False;
       fdMetaInfoQuery.CatalogName := cbDatabases.Text;
-      fdMetaInfoQuery.SchemaName := 'dbo';
+      fdMetaInfoQuery.SchemaName := edSchema.Text;
       fdMetaInfoQuery.ObjectName := db_item.Name;
       fdMetaInfoQuery.MetaInfoKind := mkTableFields;
 
@@ -661,7 +697,7 @@ begin
     begin
       fdMetaInfoQuery.Close;
       fdMetaInfoQuery.CatalogName := cbDatabases.Text;
-      fdMetaInfoQuery.SchemaName := 'dbo';
+      fdMetaInfoQuery.SchemaName := edSchema.Text;
       fdMetaInfoQuery.ObjectName := db_item.Name;
       fdMetaInfoQuery.MetaInfoKind := mkProcArgs;
       fdMetaInfoQuery.Open;
@@ -775,7 +811,7 @@ begin
     DBTables.Data := nil;
 
     fdMetaInfoQuery.CatalogName := cbDatabases.Text;
-    fdMetaInfoQuery.SchemaName := 'dbo';
+    fdMetaInfoQuery.SchemaName := edSchema.Text;
     fdMetaInfoQuery.MetaInfoKind := mkTables;
     // fdMetaInfoQuery.ObjectScopes := [osMy, osOther, osSystem];
 
@@ -816,7 +852,7 @@ begin
     //
 
     fdMetaInfoQuery.Close;
-    fdMetaInfoQuery.SchemaName := 'dbo';
+    fdMetaInfoQuery.SchemaName := edSchema.Text;
     fdMetaInfoQuery.MetaInfoKind := mkProcs;
 
     if edSearch.Text = '' then
@@ -866,8 +902,8 @@ begin
   frame.fdConnection.Connected := False;
   frame.fdConnection.Assign(fdConnection);
   frame.fdConnection.OnLogin := fdConnectionLogin;
+  frame.ConnectionName := GetConnectionText;
 
-  frame.lblConnection.Text := GetConnectionText;
   UpdateTabText(tab, Item.Name);
 
   if SqlSource <> '' then
@@ -938,7 +974,6 @@ procedure TfrmInspector.tbAddNewTabClick(Sender: TObject);
 begin
   // Convert 'Add' tab into a tab with record set
   var tab := Sender as TTabItem;
-  tab.Width := Canvas.TextWidth('<unknown>') + 30;
   UpdateTabText(tab, '<unknown>');
   tab.OnClick := nil;
   InitializeFrameForTab(tab);

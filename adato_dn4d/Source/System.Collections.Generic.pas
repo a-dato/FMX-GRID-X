@@ -71,7 +71,7 @@ type
     function  IndexOf(const item: T): Integer;
     procedure Insert(index: Integer; const item: T);
     procedure RemoveAt(index: Integer);
-    function  AsArray: TArray<T>;
+    function  InnerArray: TArray<T>;
     function  ToArray: TArray<T>;
 
     // Properties
@@ -519,7 +519,7 @@ type
     procedure Sort(comparison: Comparison<T>); overload;
     procedure Sort(index: Integer; NumItems: Integer; const comparer: IComparer<T>); overload;
     function  ToArray: TArray<T>;
-    function  AsArray: TArray<T>;
+    function  InnerArray: TArray<T>;
 
     function  get_Capacity: Integer;
     procedure set_Capacity(Value: Integer);
@@ -1226,7 +1226,7 @@ type
     public function  GetEnumerator: IEnumerator<TKey>;
     public function  IndexOf(const key: TKey): Integer;
     public procedure Insert(index: Integer; const value: TKey);
-    public function  AsArray: TArray<TKey>;
+    public function  InnerArray: TArray<TKey>;
     public function  ToArray: TArray<TKey>;
     public function  Remove(const key: TKey): boolean;
     public procedure RemoveAt(index: Integer);
@@ -1254,7 +1254,7 @@ type
     public function GetEnumerator: IEnumerator<TValue>;
     public function IndexOf(const Value: TValue): Integer;
     public procedure Insert(index: Integer; const Value: TValue);
-    public function  AsArray: TArray<TValue>;
+    public function  InnerArray: TArray<TValue>;
     public function  ToArray: TArray<TValue>;
     public function  Remove(const Value: TValue): boolean;
     public procedure RemoveAt(index: Integer);
@@ -1319,7 +1319,7 @@ type
     procedure Clear; virtual;
     function  Contains(const item: T): boolean; virtual;
     procedure CopyTo(var destination: array of T; arrayIndex: Integer); virtual;
-    function  AsArray: TArray<T>;
+    function  InnerArray: TArray<T>;
     function  ToArray: TArray<T>;
     function  Remove(const item: T): boolean; virtual;
 
@@ -2753,7 +2753,7 @@ begin
 //    Result[i] := self._items[i];
 end;
 
-function CList<T>.AsArray: TArray<T>;
+function CList<T>.InnerArray: TArray<T>;
 begin
   // Shrink internal storage to the actual size
   if Length(_items) <> count then
@@ -4613,7 +4613,7 @@ begin
   ThrowHelper.ThrowNotSupportedException(ExceptionResource.NotSupported_SortedListNestedWrite)
 end;
 
-function CKeyList<TKey, TValue>.AsArray: TArray<TKey>;
+function CKeyList<TKey, TValue>.InnerArray: TArray<TKey>;
 begin
   ThrowHelper.ThrowNotSupportedException(ExceptionResource.NotSupported_SortedListNestedWrite);
 end;
@@ -4709,7 +4709,7 @@ begin
   ThrowHelper.ThrowNotSupportedException(ExceptionResource.NotSupported_SortedListNestedWrite)
 end;
 
-function CValueList<TKey, TValue>.AsArray: TArray<TValue>;
+function CValueList<TKey, TValue>.InnerArray: TArray<TValue>;
 begin
   ThrowHelper.ThrowNotSupportedException(ExceptionResource.NotSupported_SortedListNestedWrite);
 end;
@@ -4793,7 +4793,7 @@ begin
   raise NotImplementedException.Create();
 end;
 
-function  CReadOnlyCollection<T>.AsArray: TArray<T>;
+function  CReadOnlyCollection<T>.InnerArray: TArray<T>;
 begin
   ThrowHelper.ThrowNotSupportedException(ExceptionResource.NotSupported_ReadOnlyCollection)
 end;

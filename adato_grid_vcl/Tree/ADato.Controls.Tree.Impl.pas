@@ -6919,7 +6919,7 @@ begin
   begin
     bottom := -1;
     top := MaxInt;
-    for range in _rangeSelections.AsArray do
+    for range in _rangeSelections.InnerArray do
     begin
       top := CMath.Min(top, CMath.Min(range.RangeStart.RowIndex, range.RangeEnd.RowIndex));
       bottom := CMath.Min(View.Count - 1, CMath.Max(bottom, CMath.Max(range.RangeStart.RowIndex, range.RangeEnd.RowIndex)));

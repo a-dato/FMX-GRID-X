@@ -56,6 +56,8 @@ type
     FStopWatch: TStopWatch;
     FQueryEditorHeight: Single;
 
+    function  get_ConnectionName: string;
+    procedure set_ConnectionName(const Value: string);
     function  get_CommandText: string;
     procedure set_CommandText(const Value: string);
 
@@ -67,6 +69,7 @@ type
   public
     { Public declarations }
     procedure ExecuteQuery;
+    property ConnectionName: string read get_ConnectionName write set_ConnectionName;
     property CommandText: string read get_CommandText write set_CommandText;
     property SqlSourceText: string read get_CommandText write set_SqlSourceText;
   end;
@@ -223,10 +226,20 @@ begin
   Result := SqlQuery.Text;
 end;
 
+function TOpenRecordSetFrame.get_ConnectionName: string;
+begin
+  Result := lblConnection.Text;
+end;
+
 procedure TOpenRecordSetFrame.set_CommandText(const Value: string);
 begin
   UpdateDialogControls(False);
   SqlQuery.Text := Value;
+end;
+
+procedure TOpenRecordSetFrame.set_ConnectionName(const Value: string);
+begin
+  lblConnection.Text := Value;
 end;
 
 procedure TOpenRecordSetFrame.set_SqlSourceText(const Value: string);

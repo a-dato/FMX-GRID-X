@@ -1,7 +1,7 @@
 object frmInspector: TfrmInspector
   Left = 0
   Top = 0
-  Caption = 'Form1'
+  Caption = 'Database inspector'
   ClientHeight = 658
   ClientWidth = 1081
   FormFactor.Width = 320
@@ -225,6 +225,17 @@ object frmInspector: TfrmInspector
           Size.Height = 25.000000000000000000
           Size.PlatformDefault = False
           StyleLookup = 'refreshtoolbutton'
+          TextSettings.Trimming = None
+        end
+        object SpeedButton5: TSpeedButton
+          Action = acMoveData
+          Align = Left
+          ImageIndex = -1
+          Position.X = 123.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'cameratoolbuttonbordered'
           TextSettings.Trimming = None
         end
       end
@@ -654,6 +665,7 @@ object frmInspector: TfrmInspector
     TabOrder = 14
     object cbConnections: TComboBox
       Align = Left
+      Hint = 'Connection name'
       Size.Width = 327.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
@@ -662,6 +674,7 @@ object frmInspector: TfrmInspector
     end
     object cbDataBases: TComboBox
       Align = Left
+      Hint = 'Database name'
       Position.X = 327.000000000000000000
       Size.Width = 157.000000000000000000
       Size.Height = 25.000000000000000000
@@ -673,12 +686,22 @@ object frmInspector: TfrmInspector
       Action = acAddConnection
       Align = Left
       ImageIndex = -1
-      Position.X = 484.000000000000000000
+      Position.X = 584.000000000000000000
       Size.Width = 41.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'addtoolbuttonbordered'
       TextSettings.Trimming = None
+    end
+    object edSchema: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Align = Left
+      TabOrder = 2
+      Position.X = 484.000000000000000000
+      Hint = 'Database scheme'
+      Size.Width = 100.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
     end
   end
   object Timer1: TTimer
@@ -720,6 +743,11 @@ object frmInspector: TfrmInspector
       ShortCut = 120
       OnExecute = acExecuteQueryExecute
     end
+    object acMoveData: TAction
+      Text = 'acMoveData'
+      Hint = 'Move data between databases'
+      OnExecute = acMoveDataExecute
+    end
   end
   object fdConnection: TFDConnection
     Params.Strings = (
@@ -731,6 +759,7 @@ object frmInspector: TfrmInspector
     ResourceOptions.AssignedValues = [rvAutoReconnect]
     ResourceOptions.AutoReconnect = True
     OnLogin = fdConnectionLogin
+    AfterConnect = fdConnectionAfterConnect
     Left = 104
     Top = 136
   end
