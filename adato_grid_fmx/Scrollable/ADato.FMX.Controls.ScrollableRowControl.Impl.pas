@@ -1718,7 +1718,7 @@ begin
     if (Selection.Count = 0) then exit;
 
     // get previous CurrentRow
-    var SelObj := TSelectionItem( Selection.AsArray[Selection.Count - 1] );
+    var SelObj := TSelectionItem( Selection.InnerArray[Selection.Count - 1] );
     if SelObj.RowIndex = CurrentRowIndex then exit;
 
     var columnIndex := SelObj.ColumnIndex;
