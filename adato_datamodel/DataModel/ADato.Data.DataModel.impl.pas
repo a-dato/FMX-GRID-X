@@ -1959,7 +1959,7 @@ begin
   _validIndexIndex := -1;
   _validChildIndexIndex := -1;
 
-  for r in Rows.ToArray do
+  for r in Rows.InnerArray do
     r.UpdateTable(nil);
 
   Rows.Clear;

@@ -26,10 +26,16 @@ type
     procedure EndEdit;
   end;
 
-  IUpdatableObject = interface(IBaseInterface)
-    ['{CD116A9E-1746-46B3-AC0A-4D36EFD9DAE3}']
+  IUpdatableObject = interface
+    ['{3A369F1E-AC6C-4CD0-8A87-E2C41D4C579D}']
     procedure BeginUpdate;
     procedure EndUpdate;
+  end;
+
+  IUpdatableObjectWithFlag = interface
+    ['{76AEEAE0-1A5F-4552-835C-3C3C41421485}']
+    procedure BeginUpdate;
+    procedure EndUpdate(IgnoreUpdates: Boolean);
   end;
 
   IEditState = interface

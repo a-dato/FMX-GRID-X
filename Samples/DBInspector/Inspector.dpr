@@ -5,7 +5,8 @@ uses
   FMX.Forms,
   Main in 'Main.pas' {frmInspector},
   Login in 'Login.pas' {frmLogin},
-  OpenRecordset in 'OpenRecordset.pas' {OpenRecordSetFrame: TFrame};
+  OpenRecordset in 'OpenRecordset.pas' {OpenRecordSetFrame: TFrame},
+  CopyData in 'CopyData.pas' {frmCopyData: TFrame};
 
 {$R *.res}
 

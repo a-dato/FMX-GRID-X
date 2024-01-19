@@ -10,13 +10,25 @@ uses
   ADato.FMX.Controls.ScrollableRowControl.Impl, ADato.Controls.FMX.Tree.Impl,
   FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
   FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
-  FireDAC.Phys, FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.FMXUI.Wait,
+  FireDAC.Phys, FireDAC.Phys.MSSQLDef, FireDAC.FMXUI.Wait,
   FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FMX.Menus,
   Data.DB, FireDAC.Comp.DataSet, FireDAC.Comp.Client, FMX.ListBox,
   System.ImageList, FMX.ImgList, FMX.ExtCtrls,
   ADato.FMX.Controls.ScrollableControl.Impl, FMX.Edit, System_,
   System.Collections.Generic, FireDAC.Comp.UI, FireDAC.FMXUI.Async,
-  OpenRecordset, FireDAC.FMXUI.Login;
+  OpenRecordset, FireDAC.FMXUI.Login,
+  FireDAC.Phys.MSSQL,
+  FireDAC.Phys.IB,
+  FireDAC.Phys.MySQL,
+  FireDAC.Phys.PG,
+  FireDAC.Phys.FB,
+  FireDAC.Phys.ODBC,
+  FireDAC.Phys.TDBX,
+  FireDAC.Phys.Oracle,
+  FireDAC.Phys.MongoDB, FireDAC.Phys.PGDef, FireDAC.Phys.OracleDef,
+  FireDAC.Phys.FBDef, FireDAC.Phys.IBDef, FireDAC.Phys.ODBCDef,
+  FireDAC.Phys.MongoDBDef, FireDAC.Phys.IBBase, FireDAC.Phys.ODBCBase,
+  FireDAC.Phys.MySQLDef;
 
 type
   {$M+} // Load RTTI information for IDBItem interface
@@ -60,8 +72,23 @@ type
     SpeedButton4: TSpeedButton;
     acAddConnection: TAction;
     FDGUIxLoginDialog1: TFDGUIxLoginDialog;
+    acExecuteQuery: TAction;
+    StyleBook1: TStyleBook;
+    FDPhysMSSQLDriverLink1: TFDPhysMSSQLDriverLink;
+    FDPhysPgDriverLink1: TFDPhysPgDriverLink;
+    FDPhysOracleDriverLink1: TFDPhysOracleDriverLink;
+    FDPhysFBDriverLink1: TFDPhysFBDriverLink;
+    FDPhysIBDriverLink1: TFDPhysIBDriverLink;
+    FDPhysODBCDriverLink1: TFDPhysODBCDriverLink;
+    FDPhysMongoDriverLink1: TFDPhysMongoDriverLink;
+    FDPhysMySQLDriverLink1: TFDPhysMySQLDriverLink;
+    edSchema: TEdit;
+    SpeedButton5: TSpeedButton;
+    acMoveData: TAction;
 
     procedure acAddConnectionExecute(Sender: TObject);
+    procedure acExecuteQueryExecute(Sender: TObject);
+    procedure acMoveDataExecute(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure acOpenObjectExecute(Sender: TObject);
     procedure acRefreshExecute(Sender: TObject);
@@ -75,13 +102,13 @@ type
     procedure DBTablesCellChanged(Sender: TCustomTreeControl; e:
         CellChangedEventArgs);
     procedure edSearchChangeTracking(Sender: TObject);
+    procedure fdConnectionAfterConnect(Sender: TObject);
     procedure tbAddNewTabClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     LastSearchChange: Integer;
     DatabaseLoading: Boolean;
     TablesLoading: Boolean;
-    SelectedItems: TStringList;
     passwords: TStringList;
     OpenRecordSetCount: INteger;
 
@@ -94,16 +121,17 @@ type
     function  GetObjectSource(const Item: IDBItem) : string;
     procedure OpenObject(const Item: IDBItem; SqlSource: string = '');
     procedure ExportClicked(Sender: TObject);
-    procedure ShowHint(Sender: TObject);
     procedure LoadInspectorIniFile;
     procedure LoadFieldNames;
     procedure LoadIndexes;
     function  LoadIndexFields(const Table: IDBItem; const Index: IDBItem) : List<IDBItem>;
-    function GetCatalogName: string;
+    function  GetCatalogName: string;
+    procedure TabCloseButtonClicked(Sender: TObject);
+    procedure UpdateTabText(Tab: TTabItem; Text: string);
 
   protected
     function GetConnectionText: string;
-    procedure IntializeFrameForTab(Tab: TTabItem);
+    procedure InitializeFrameForTab(Tab: TTabItem);
     procedure UpdateConnectionForTab(Tab: TTabItem; OverrideExistingConnection: Boolean);
   public
     { Public declarations }
@@ -168,7 +196,7 @@ implementation
 
 {$R *.fmx}
 
-uses Login, FireDAC.VCLUI.ConnEdit;
+uses Login, FireDAC.VCLUI.ConnEdit, System.Rtti, System.Math, CopyData;
 
 procedure TfrmInspector.acAddConnectionExecute(Sender: TObject);
 var
@@ -197,11 +225,44 @@ begin
   end;
 end;
 
+procedure TfrmInspector.acExecuteQueryExecute(Sender: TObject);
+begin
+  var tab := tcRecordSets.ActiveTab;
+  if tab.TagObject is TOpenRecordSetFrame then
+    (tab.TagObject as TOpenRecordSetFrame).ExecuteQuery;
+end;
+
+procedure TfrmInspector.acMoveDataExecute(Sender: TObject);
+begin
+  // Convert 'Add' tab into a tab with record set
+  var tab := tcRecordSets.Tabs[tcRecordSets.TabCount - 1];
+  UpdateTabText(tab, 'Copy Data');
+  tab.OnClick := nil;
+
+  inc(OpenRecordSetCount);
+
+  var frame := TfrmCopyData.Create(Tab);
+  frame.Name := 'CopyData_' + OpenRecordSetCount.ToString;
+  frame.Align := TAlignLayout.Client;
+  frame.RefreshConnections;
+
+  tab.AddObject(frame);
+  tab.TagObject := frame;
+  tab.StyleLookup := 'CloseButtonStyle';
+  (tab as TStyledControl).StylesData['CloseButton.OnClick'] := TValue.From<TNotifyEvent>(TabCloseButtonClicked);
+
+  var newTab := TTabItem.Create(tcRecordSets);
+  newTab.Text := '+';
+  newTab.Index := tab.Index + 1;
+  newTab.OnClick := tbAddNewTabClick;
+  tcRecordSets.AddObject(newTab);
+end;
+
 procedure TfrmInspector.FormCreate(Sender: TObject);
 begin
   tcColumns.TabIndex := 0;
   tcRecordSets.TabIndex := 0;
-  IntializeFrameForTab(FirstTab);
+  InitializeFrameForTab(FirstTab);
   LoadInspectorIniFile;
 end;
 
@@ -448,7 +509,6 @@ end;
 function TfrmInspector.GetObjectSource(const Item: IDBItem): string;
 var
   sb: TStringBuilder;
-  v: Variant;
 
 begin
   fdGetSourceQuery.SQL.Text := 'sp_helptext ''' + Item.Name + '''';
@@ -488,6 +548,11 @@ begin
   LastSearchChange := Environment.TickCount;
 end;
 
+procedure TfrmInspector.fdConnectionAfterConnect(Sender: TObject);
+begin
+  edSchema.Text := fdConnection.CurrentSchema;
+end;
+
 function TfrmInspector.GetConnectionText: string;
 begin
   if fdConnection.Connected then
@@ -499,16 +564,37 @@ begin
     Result := 'Not conected';
 end;
 
-procedure TfrmInspector.IntializeFrameForTab(Tab: TTabItem);
+procedure TfrmInspector.TabCloseButtonClicked(Sender: TObject);
+begin
+  if Sender is TSpeedButton then
+  begin
+    var activeIndex := tcRecordSets.TabIndex;
+    var p := (Sender as TSpeedButton).Parent;
+    while not (p is TTabItem) do
+      p := p.Parent;
+
+    tcRecordSets.RemoveObject(p);
+    p.Free;
+
+    // Must always reset TabIndex to re-activate page
+    activeIndex := Min(tcRecordSets.TabCount - 2, activeIndex);
+    tcRecordSets.TabIndex := activeIndex;
+  end;
+end;
+
+procedure TfrmInspector.InitializeFrameForTab(Tab: TTabItem);
 begin
   inc(OpenRecordSetCount);
 
-  var frame := TOpenRecordSetFrame.Create(Self);
+  var frame := TOpenRecordSetFrame.Create(Tab);
   frame.Name := 'OpenRecordSetFrame_' + OpenRecordSetCount.ToString;
   frame.Align := TAlignLayout.Client;
+  frame.btnExecute.Action := acExecuteQuery;
 
   Tab.AddObject(frame);
   Tab.TagObject := frame;
+  Tab.StyleLookup := 'CloseButtonStyle';
+  (Tab as TStyledControl).StylesData['CloseButton.OnClick'] := TValue.From<TNotifyEvent>(TabCloseButtonClicked);
 end;
 
 procedure TfrmInspector.UpdateConnectionForTab(Tab: TTabItem; OverrideExistingConnection: Boolean);
@@ -525,7 +611,6 @@ end;
 procedure TfrmInspector.LoadDataBases;
 var
   catalog: string;
-  sl: TStringList;
 
 begin
   DatabaseLoading := True;
@@ -566,9 +651,6 @@ begin
 end;
 
 procedure TfrmInspector.LoadFieldNames;
-var
-  l: Integer;
-
 begin
   var db_item: IDBItem;
 
@@ -583,7 +665,7 @@ begin
     begin
       fdMetaInfoQuery.Filtered := False;
       fdMetaInfoQuery.CatalogName := cbDatabases.Text;
-      fdMetaInfoQuery.SchemaName := 'dbo';
+      fdMetaInfoQuery.SchemaName := edSchema.Text;
       fdMetaInfoQuery.ObjectName := db_item.Name;
       fdMetaInfoQuery.MetaInfoKind := mkTableFields;
 
@@ -615,7 +697,7 @@ begin
     begin
       fdMetaInfoQuery.Close;
       fdMetaInfoQuery.CatalogName := cbDatabases.Text;
-      fdMetaInfoQuery.SchemaName := 'dbo';
+      fdMetaInfoQuery.SchemaName := edSchema.Text;
       fdMetaInfoQuery.ObjectName := db_item.Name;
       fdMetaInfoQuery.MetaInfoKind := mkProcArgs;
       fdMetaInfoQuery.Open;
@@ -647,9 +729,6 @@ begin
 end;
 
 procedure TfrmInspector.LoadIndexes;
-var
-  l: Integer;
-
 begin
   var db_item: IDBItem;
 
@@ -732,7 +811,7 @@ begin
     DBTables.Data := nil;
 
     fdMetaInfoQuery.CatalogName := cbDatabases.Text;
-    fdMetaInfoQuery.SchemaName := 'dbo';
+    fdMetaInfoQuery.SchemaName := edSchema.Text;
     fdMetaInfoQuery.MetaInfoKind := mkTables;
     // fdMetaInfoQuery.ObjectScopes := [osMy, osOther, osSystem];
 
@@ -773,7 +852,7 @@ begin
     //
 
     fdMetaInfoQuery.Close;
-    fdMetaInfoQuery.SchemaName := 'dbo';
+    fdMetaInfoQuery.SchemaName := edSchema.Text;
     fdMetaInfoQuery.MetaInfoKind := mkProcs;
 
     if edSearch.Text = '' then
@@ -823,9 +902,9 @@ begin
   frame.fdConnection.Connected := False;
   frame.fdConnection.Assign(fdConnection);
   frame.fdConnection.OnLogin := fdConnectionLogin;
+  frame.ConnectionName := GetConnectionText;
 
-  frame.lblConnection.Text := GetConnectionText;
-  tab.Text := Item.Name;
+  UpdateTabText(tab, Item.Name);
 
   if SqlSource <> '' then
     frame.SqlSourceText := SqlSource
@@ -883,25 +962,28 @@ begin
   end;
 end;
 
-procedure TfrmInspector.ShowHint(Sender: TObject);
+procedure TfrmInspector.UpdateTabText(Tab: TTabItem; Text: string);
 begin
-
+  Tab.AutoSize := False;
+  Tab.Text := Text;
+  Tab.Width := Canvas.TextWidth(Text) + 30;
+  Tab.Height := 26;
 end;
 
 procedure TfrmInspector.tbAddNewTabClick(Sender: TObject);
 begin
   // Convert 'Add' tab into a tab with record set
   var tab := Sender as TTabItem;
-  tab.Text := '<unknown>';
+  UpdateTabText(tab, '<unknown>');
   tab.OnClick := nil;
-  IntializeFrameForTab(tab);
+  InitializeFrameForTab(tab);
   UpdateConnectionForTab(tab, True);
 
-  var addTab := TTabItem.Create(tcRecordSets);
-  addTab.Text := '+';
-  addTab.Index := tab.Index + 1;
-  addTab.OnClick := tbAddNewTabClick;
-  tcRecordSets.AddObject(addTab);
+  var newTab := TTabItem.Create(tcRecordSets);
+  newTab.Text := '+';
+  newTab.Index := tab.Index + 1;
+  newTab.OnClick := tbAddNewTabClick;
+  tcRecordSets.AddObject(newTab);
 end;
 
 procedure TfrmInspector.Timer1Timer(Sender: TObject);

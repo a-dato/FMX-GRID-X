@@ -1607,8 +1607,8 @@ type
     procedure Assign(Source: TPersistent); override;
     // procedure Assign(const Source: IBaseInterface); reintroduce; virtual;
     function  CellFromLocation(const Location: TPointF) : ITreeCell;
-    procedure EditActiveCell; virtual;
-    procedure EditCell(const Cell: ITreeCell; const DataItem: CObject); virtual;
+    procedure EditActiveCell(SetFocus: Boolean); virtual;
+    procedure EditCell(const Cell: ITreeCell; const DataItem: CObject; SetFocus: Boolean); virtual;
     function  BeginEdit: Boolean; virtual;
     function  BeginRowEdit(const Row: ITreeRow): Boolean; virtual;
     procedure InternalBeginEdit(const Item: CObject);
@@ -6627,7 +6627,7 @@ begin
   if IsEditing or (_Editor <> nil) then
     Exit;
 
-  EditActiveCell;
+  EditActiveCell(True);
   if _editor <> nil then
     _editor.Value := nil;
 end;
@@ -6792,7 +6792,7 @@ begin
   end;
 end;
 
-procedure TCustomTreeControl.EditActiveCell;
+procedure TCustomTreeControl.EditActiveCell(SetFocus: Boolean);
 var
   dataItem: CObject;
 
@@ -6820,7 +6820,7 @@ begin
   if not TreeRowList.CanEdit(cell) or not BeginEdit then
     Exit;
 
-  EditCell(Cell, dataItem);
+  EditCell(Cell, dataItem, SetFocus);
 end;
 
 procedure TCustomTreeControl.AlignViewToCurrent(const SavedTopRow: ITreeRow);
@@ -6909,7 +6909,7 @@ begin
 
 end;
 
-procedure TCustomTreeControl.EditCell(const Cell: ITreeCell; const DataItem: CObject);
+procedure TCustomTreeControl.EditCell(const Cell: ITreeCell; const DataItem: CObject; SetFocus: Boolean);
 var
   startEditArgs     : StartEditEventArgs;
   editValue         : CObject;
@@ -6941,7 +6941,7 @@ begin
 
     _editor.OnExit := EditorExit;
     _editor.OnKeyDown := EditorKeyDown;
-    _editor.Value := editValue;
+    // _editor.Value := editValue;
 
     const MARGIN_HORZ = 2; // margin for each side separately - left and right
     const MARGIN_VERT = 1;
@@ -6955,7 +6955,7 @@ begin
 
     Cell.Control.AddObject(_editor.Control);
 
-    proposedEditor.BeginEdit;
+    proposedEditor.BeginEdit(editValue, SetFocus);
   end;
 end;
 
@@ -7479,7 +7479,7 @@ begin
             var currentCellChanged := SelectCell(row.Index, cell.Index, True, False, True);
             var allowEdit := DoCellItemClicked(cell, currentCellChanged);
             if allowEdit and (not currentCellChanged or (TreeOption.AlwaysShowEditor in _Options)) then
-              EditActiveCell;
+              EditActiveCell(True);
           end;
         end
 
@@ -7897,7 +7897,7 @@ begin
           Key := 0;
         end
         else
-          EditActiveCell;
+          EditActiveCell(True);
       end;
 
       vkInsert:
@@ -7952,7 +7952,7 @@ begin
         begin
            if not TryChangeCheckbox(Key = 0) and not IsEditing and (_Editor = nil) then //(_Editor <> nil) then
            begin
-             EditActiveCell;
+             EditActiveCell(True);
 
              // type letter in Editor
              if (_Editor <> nil) and (Key = 0) then

@@ -669,6 +669,11 @@ type
     class function Supports<T>(const Value: CObject): Boolean; overload;
     class function Supports<T>(const Value: CObject; out Intf) : Boolean; overload;
 
+    class procedure Call<T>(const Value: IInterface; Proc: TProc<T>);
+    class function TryCall<T>(const Value: IInterface; Proc: TProc<T>) : Boolean;
+    class function AsType<T>(const Value: IInterface) : T;
+    class function TryAsType<T>(const Value: IInterface) : T;
+
     class function TypeToGuid(P: PTypeInfo) : TGuid; inline;
     class function ToInterface(const Value: CObject): IBaseInterface;
   end;
@@ -2621,6 +2626,7 @@ type
 
   procedure EInvalidCastException(const FromType, ToType: TTypeKind);
   procedure EInvalidCastByNameException(const FromTypeName, ToTypeName: string);
+  procedure ECannotCastToInterface(const PType: PTypeInfo);
 
   function  Get_CObjectProp(Instance: TObject; PropInfo: IPropInfo) : CObject;
   procedure Set_CObjectProp(Instance: TObject; PropInfo: IPropInfo; const Value: CObject);
@@ -4381,6 +4387,11 @@ begin
     [string(FromTypeName), string(ToTypeName)]));
 end;
 
+procedure ECannotCastToInterface(const PType: PTypeInfo);
+begin
+  raise Exception.Create(CString.Format('Interface not supoorted: ''{0}''', string(PType.Name)));
+end;
+
 { EventArgs }
 //function EventArgs.Clone: CObject;
 //begin
@@ -4624,6 +4635,36 @@ begin
     EventHandlerProc(_events[cnt]^)(Sender, Args);
     inc(cnt);
   end;
+end;
+
+class procedure Interfaces.Call<T>(const Value: IInterface; Proc: TProc<T>);
+begin
+  var ii: T;
+  if not Supports<T>(Value, ii) then
+    ECannotCastToInterface(System.TypeInfo(T));
+  Proc(ii);
+end;
+
+class function Interfaces.TryCall<T>(const Value: IInterface; Proc: TProc<T>) : Boolean;
+begin
+  var ii: T;
+  if Supports<T>(Value, ii) then
+  begin
+    Result := True;
+    Proc(ii);
+  end else
+    Result := False;
+end;
+
+class function Interfaces.AsType<T>(const Value: IInterface) : T;
+begin
+  if not Supports<T>(Value, Result) then
+    ECannotCastToInterface(TypeInfo(T));
+end;
+
+class function Interfaces.TryAsType<T>(const Value: IInterface) : T;
+begin
+  Supports<T>(Value, Result);
 end;
 
 class function Interfaces.Supports(const Value: IInterface; const IID: TGUID): Boolean;
@@ -9058,7 +9099,21 @@ begin
             value_t := FValue.AsObject;
 
           Result := value_t.TryCast(ATypeInfo, Value);
-        end;
+        end
+//        // Object to interface cast
+//        else if ATypeInfo.Kind = tkInterface then
+//        begin
+//          var obj: TObject;
+//          if FValue.TryAsType<IAutoObject>(a) then
+//            obj := a.&Object else
+//            obj := FValue.AsObject;
+//
+//          if Interfaces.Supports(obj, TGUID(ATypeInfo.TypeData.IntfGuid), ii) then
+//          begin
+//            TValue.Make(@ii, ATypeInfo, value_t);
+//            Result := value_t.TryCast(ATypeInfo, Value);
+//          end;
+//        end;
       end;
 
       TypeCode.Int32:

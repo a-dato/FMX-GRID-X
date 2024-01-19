@@ -382,7 +382,7 @@ begin
     keys.Sort(cmp);
 
   Result := CList<Integer>.Create(keys.Count);
-  for keyRow in keys.ToArray do
+  for keyRow in keys.InnerArray do
     Result.Add(keyRow.Row);
 
   FinalizeSorts;
