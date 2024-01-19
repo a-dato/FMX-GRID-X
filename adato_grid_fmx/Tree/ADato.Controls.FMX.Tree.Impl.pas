@@ -4561,10 +4561,10 @@ begin
         View.Add(lTopRow);
       end;
 
-    {$IFDEF DEBUG}
-    if (_InternalState * [TreeState.RowHeightsChanged]) <> [] then
-      ResetView(False, True {save top row (but reload it)});
-    {$ENDIF}
+    //{$IFDEF DEBUG}
+    //if (_InternalState * [TreeState.RowHeightsChanged]) <> [] then
+    //  ResetView(False, True {save top row (but reload it)});
+    //{$ENDIF}
 
     if _RowAnimationsCountNow = 0 then // when not expanding\collapsing
       if not (TreeState.RowHeightsChanged in _InternalState) then

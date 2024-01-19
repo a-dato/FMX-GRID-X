@@ -202,7 +202,10 @@ end;
 function TCellEditor.get_Modified: Boolean;
 begin
   if Self is TDateTimeEditor then
-    Result := TDateTimeEditor(Self).ValueChanged else
+    Result := TDateTimeEditor(Self).ValueChanged
+  else if Self is TDropDownEditor then
+    Result := TDropDownEditor(Self).SaveData 
+	else
     Result := not CObject.Equals(_OriginalValue, get_Value);
 end;
 
