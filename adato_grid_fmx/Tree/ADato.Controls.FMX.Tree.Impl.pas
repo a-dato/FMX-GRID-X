@@ -4431,6 +4431,7 @@ begin
         _contentBounds.Right := 0;
         _contentBounds.Bottom := 0;
         _lastSize := TSizeF.Create(0, 0);  // reset to call AutofitColumns again
+      	cellChanged := True;
       end;
 
     if (_View = nil) then
