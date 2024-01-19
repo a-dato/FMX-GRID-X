@@ -99,7 +99,7 @@ type
     public procedure Insert(index: Integer; const item: T); reintroduce; overload;
     strict protected procedure InsertItem(index: Integer; const item: T); virtual;
     strict private class function IsCompatibleObject(const value: CObject): boolean; static;
-    public function AsArray: TArray<T>; virtual;
+    public function InnerArray: TArray<T>; virtual;
     public function ToArray: TArray<T>; virtual;
     public function Remove(const item: T): Boolean; reintroduce; overload; virtual;
     public procedure RemoveAt(index: Integer); override;
@@ -390,14 +390,14 @@ begin
   Result := True;
 end;
 
-function CCollection<T>.AsArray: TArray<T>;
+function CCollection<T>.InnerArray: TArray<T>;
 begin
-  Result := self._items.AsArray;
+  Result := self._items.InnerArray;
 end;
 
 function CCollection<T>.ToArray: TArray<T>;
 begin
-  Result := self._items.AsArray;
+  Result := self._items.ToArray;
 end;
 
 function CCollection<T>.Remove(const value: CObject): Boolean;

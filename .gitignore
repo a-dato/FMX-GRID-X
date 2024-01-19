@@ -2,6 +2,7 @@
 *.dcu
 *.exe
 *.rsm
+*.res
 
 # Delphi local files (user-specific info)
 *.local

@@ -59,6 +59,7 @@ object frmLogin: TfrmLogin
     OnClick = Button1Click
   end
   object Button2: TButton
+    Cancel = True
     Position.X = 217.000000000000000000
     Position.Y = 89.000000000000000000
     TabOrder = 3

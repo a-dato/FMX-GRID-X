@@ -11,8 +11,8 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
     Size.Height = 80.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 852.000000000000000000
-    Viewport.Height = 76.000000000000000000
+    Viewport.Width = 856.000000000000000000
+    Viewport.Height = 80.000000000000000000
   end
   object Layout1: TLayout
     Align = Top
@@ -20,14 +20,14 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
     Size.Height = 33.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    object SpeedButton1: TSpeedButton
-      Action = Execute
+    object btnExecute: TSpeedButton
       Align = Left
-      ImageIndex = -1
+      Hint = 'Execute'
       Size.Width = 33.000000000000000000
       Size.Height = 33.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'playtoolbutton'
+      Text = 'Execute'
       TextSettings.Trimming = None
     end
     object Button1: TButton
@@ -68,7 +68,7 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
       TextSettings.HorzAlign = Trailing
       TextSettings.Trimming = None
       Text = 'Connection: None'
-      TabOrder = 9
+      TabOrder = 8
     end
     object cbRecordCount: TComboBox
       Align = Left
@@ -117,8 +117,21 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
     Size.Height = 51.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
-    Viewport.Width = 852.000000000000000000
-    Viewport.Height = 47.000000000000000000
+    Viewport.Width = 856.000000000000000000
+    Viewport.Height = 51.000000000000000000
+    object lblExecutionLog: TLabel
+      Align = Left
+      StyledSettings = [Family, Style]
+      Size.Width = 120.000000000000000000
+      Size.Height = 47.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 9.000000000000000000
+      TextSettings.FontColor = claGray
+      TextSettings.VertAlign = Trailing
+      TextSettings.Trimming = None
+      Text = 'Execution log'
+      TabOrder = 0
+    end
   end
   object lyDataPanel: TLayout
     Align = Client
@@ -129,9 +142,9 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
     object DataGrid: TFMXTreeControl
       Align = Client
       Size.Width = 856.000000000000000000
-      Size.Height = 333.000000000000000000
+      Size.Height = 310.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 2
+      TabOrder = 1
       AcceptsTab = False
       AcceptsReturn = False
       AllowUserToAddRows = True
@@ -144,26 +157,44 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
       ScrollPerRow = False
       DefaultExpandRows = False
       HighlightRows = True
+      CellChanged = DataGridCellChanged
+      EditStart = DataGridEditStart
       Viewport.Width = 854.000000000000000000
-      Viewport.Height = 306.000000000000000000
+      Viewport.Height = 283.000000000000000000
     end
     object DataEditor: TMemo
       Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
       DataDetectorTypes = []
+      ShowScrollBars = False
+      OnChangeTracking = DataEditorChangeTracking
       Align = Bottom
-      Position.Y = 338.000000000000000000
+      Position.Y = 315.000000000000000000
       Size.Width = 856.000000000000000000
-      Size.Height = 40.000000000000000000
+      Size.Height = 63.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
-      Viewport.Width = 852.000000000000000000
-      Viewport.Height = 36.000000000000000000
+      OnKeyDown = DataEditorKeyDown
+      Viewport.Width = 856.000000000000000000
+      Viewport.Height = 63.000000000000000000
+      object lblCellEditor: TLabel
+        Align = Left
+        StyledSettings = [Family, Style]
+        Size.Width = 120.000000000000000000
+        Size.Height = 59.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 9.000000000000000000
+        TextSettings.FontColor = claGray
+        TextSettings.VertAlign = Trailing
+        TextSettings.Trimming = None
+        Text = 'Cell editor'
+        TabOrder = 0
+      end
     end
     object Splitter2: TSplitter
       Align = Bottom
       Cursor = crVSplit
       MinSize = 20.000000000000000000
-      Position.Y = 333.000000000000000000
+      Position.Y = 310.000000000000000000
       Size.Width = 856.000000000000000000
       Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
@@ -187,14 +218,9 @@ object OpenRecordSetFrame: TOpenRecordSetFrame
     Top = 136
   end
   object ActionList1: TActionList
+    OnUpdate = ActionList1Update
     Left = 488
     Top = 137
-    object Execute: TAction
-      Text = 'Execute'
-      Hint = 'Execute'
-      ShortCut = 120
-      OnExecute = ExecuteExecute
-    end
     object acAbort: TAction
       Text = 'Abort'
       OnExecute = acAbortExecute

@@ -374,6 +374,7 @@ begin
       begin
         var s := VarArrayHighBound(v^, 1) + 1;
         inherited Write(vd.VPointer, s);
+        Position := 0;
       end;
 
       VarClear(v^);

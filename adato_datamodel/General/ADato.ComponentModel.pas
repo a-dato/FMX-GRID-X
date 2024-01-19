@@ -33,7 +33,7 @@ type
     // QueryInterface provides a way to overide the interface
     // used for querying other interfaces
     _QueryControllers: array of Pointer;
-    _InterfaceComponentReference: Pointer;
+    [unsafe]_InterfaceComponentReference: IInterfaceComponentReference;
 
   protected
     function  get_InterfaceComponentReference: IInterfaceComponentReference;
@@ -57,12 +57,12 @@ uses
 
 function  TRemoteQueryControllerSupport.get_InterfaceComponentReference: IInterfaceComponentReference;
 begin
-  Result := IInterfaceComponentReference(_InterfaceComponentReference);
+  Result := _InterfaceComponentReference;
 end;
 
 procedure TRemoteQueryControllerSupport.set_InterfaceComponentReference(const Value: IInterfaceComponentReference);
 begin
-  _InterfaceComponentReference := Pointer(Value);
+  _InterfaceComponentReference := Value;
 end;
 
 procedure TRemoteQueryControllerSupport.AddQueryController(const Value: IInterface);

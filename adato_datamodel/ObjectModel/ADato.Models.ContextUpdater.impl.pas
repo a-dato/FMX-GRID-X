@@ -49,7 +49,12 @@ begin
   var current := dm.DefaultCurrencyManager.Current;
   var count: Integer := dm.DefaultView.Rows.Count;
   if (current < count) and (count > 0) then
-    location := dm.DefaultView.Rows[current].Row else
+  begin
+    location := dm.DefaultView.Rows[current].Row;
+    if dm.IndexOf(location) = -1 then
+      location := nil;
+  end
+  else
     location := nil;
 
   if o = nil then

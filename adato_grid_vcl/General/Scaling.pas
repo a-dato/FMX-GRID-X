@@ -1,13 +1,17 @@
 unit Scaling;
+
 interface
+
 uses
   WinApi.Windows,
   System.Drawing;
-const
-  DefaultPPI = Winapi.Windows.USER_DEFAULT_SCREEN_DPI;
-  TwipsPerInch = 1440;
+
 type
   TScaler = class
+  const
+    DefaultPPI = Winapi.Windows.USER_DEFAULT_SCREEN_DPI;
+    TwipsPerInch = 1440;
+
   public
     class function Scaled(aValue: Integer; PPI: Integer): Integer; overload;
     class function Scaled(aValue: Single; PPI: Integer): Single; overload;

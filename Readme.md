@@ -7,6 +7,9 @@ FMX-Grid provides the following features:
 * Connects to different data sources (Lists, ObjectModel, datatset's)
 * Smart row caching results in low memory usage
 * Fast scrolling
+* Extendable property model based on .Net type system (object properties can be modified at runtime)
+* Development backed up by a professional team of FMX developers
+* Components used in professional software (Lynx/Lynx-x) in a large user community
 
 ## License
 One software license is required per developer.

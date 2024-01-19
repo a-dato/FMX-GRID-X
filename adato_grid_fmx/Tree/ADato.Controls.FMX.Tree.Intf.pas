@@ -1067,7 +1067,7 @@ type
     function  get_OriginalValue: CObject;
     {$ENDIF}
 
-    procedure BeginEdit;
+    procedure BeginEdit(const EditValue: CObject; SetFocus: Boolean);
     procedure EndEdit;
 
     function  WantsKey(var Key: Word; var KeyChar: Char; Shift: TShiftState) : Boolean;
