@@ -966,7 +966,10 @@ type
     procedure UpdateColumnWidth(ColumnIndex: Integer;Width: Single; ColSpan: Integer);
   end;
 
-  TTreeSortDescription = {$IFDEF DOTNET}public{$ENDIF} class(CListSortDescription, ITreeSortDescription)
+  TTreeSortDescription = {$IFDEF DOTNET}public{$ENDIF} class(CListSortDescription,
+    ITreeSortDescription,
+    IListSortDescriptionWithComparer,
+    IListSortDescriptionWithProperty)
   private
     _row: ITreeRow;
 
@@ -974,8 +977,13 @@ type
     _SortType: SortType;
     _Tree: ITreeControl;
     _PropertyDescriptor: CString;
+    _Comparer: IComparer<CObject>;
     _LayoutColumn: ITreeLayoutColumn;
 
+    function  get_PropertyDescriptor: CString;
+    procedure set_PropertyDescriptor(const Value: CString);
+    function  get_Comparer: IComparer<CObject>;
+    procedure set_Comparer(const Value: IComparer<CObject>);
     function  get_LayoutColumn: ITreeLayoutColumn;
     function  get_SortType: SortType; virtual;
     procedure set_SortType(const Value: SortType);
@@ -9568,6 +9576,16 @@ end;
 
 { TTreeSortDescription }
 
+procedure TTreeSortDescription.set_Comparer(const Value: IComparer<CObject>);
+begin
+  _Comparer := Value;
+end;
+
+procedure TTreeSortDescription.set_PropertyDescriptor(const Value: CString);
+begin
+  _PropertyDescriptor := Value;
+end;
+
 procedure TTreeSortDescription.set_SortType(const Value: SortType);
 begin
   _SortType := Value;
@@ -9667,6 +9685,11 @@ begin
   _LayoutColumn := Column;
 end;
 
+function TTreeSortDescription.get_Comparer: IComparer<CObject>;
+begin
+  Result := _Comparer;
+end;
+
 function TTreeSortDescription.get_LayoutColumn: ITreeLayoutColumn;
 begin
   // happens for example when:
@@ -9680,6 +9703,11 @@ begin
   end;
 
   Result := _LayoutColumn;
+end;
+
+function TTreeSortDescription.get_PropertyDescriptor: CString;
+begin
+  Result := _PropertyDescriptor;
 end;
 
 function TTreeSortDescription.get_SortType: SortType;
