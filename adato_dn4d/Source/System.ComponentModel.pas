@@ -32,7 +32,7 @@ type
     procedure EndUpdate;
   end;
 
-  IUpdatableObjectWithFlag = interface
+  IUpdatableObjectWithUpdateFlag = interface
     ['{76AEEAE0-1A5F-4552-835C-3C3C41421485}']
     procedure BeginUpdate;
     procedure EndUpdate(IgnoreUpdates: Boolean);
