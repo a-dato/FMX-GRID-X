@@ -1703,9 +1703,19 @@ type
     function Clone: CObject;
   end;
 
+  ICloneable<T> = interface
+    ['{2FAC31F4-7359-4D7A-B2E9-06AD77993402}']
+    function  Clone: T;
+  end;
+
   IAssigneable = interface
     ['{6E759D9A-A4DC-4F54-91CD-A6FDD56B3BB4}']
-    procedure AssignTo(const Other: CObject);
+    procedure AssignTo(const Target: CObject);
+  end;
+
+  IAssigneable<T> = interface
+    ['{9E4132DA-1B66-469B-A0D6-D844C4BAD801}']
+    procedure AssignTo(const Target: T);
   end;
 
   IComparer = interface
@@ -4399,7 +4409,7 @@ end;
 
 procedure ECannotCastToInterface(const PType: PTypeInfo);
 begin
-  raise Exception.Create(CString.Format('Interface not suported: ''{0}''', string(PType.Name)));
+  raise Exception.Create(CString.Format('Interface not supported: ''{0}''', string(PType.Name)));
 end;
 
 { EventArgs }
