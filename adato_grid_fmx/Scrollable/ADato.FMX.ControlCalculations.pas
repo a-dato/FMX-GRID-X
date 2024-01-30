@@ -5,7 +5,9 @@ interface
 uses
   FMX.Controls,
   FMX.StdCtrls,
-  FMX.Memo, FMX.Objects, FMX.Graphics;
+  FMX.Memo,
+  FMX.Objects,
+  FMX.Graphics;
 
   function TextControlWidth(const TextControl: TControl; const Settings: TTextSettings; const Text: string; MinWidth: Single = -1; MaxWidth: Single = -1; TextHeight: Single = -1): Single;
   function TextControlHeight(const TextControl: TControl; const Settings: TTextSettings; const Text: string; MinHeight: Single = -1; MaxHeight: Single = -1; TextWidth: Single = -1): Single;
@@ -14,7 +16,12 @@ uses
 implementation
 
 uses
-  System_, System.Types, FMX.Types, FMX.TextLayout, System.Math;
+  System_,
+  System.Types,
+  System.Math,
+
+  FMX.Types,
+  FMX.TextLayout;
 
 function TextControlWidth(const TextControl: TControl; const Settings: TTextSettings; const Text: string; MinWidth: Single = -1; MaxWidth: Single = -1; TextHeight: Single = -1): Single;
 begin
