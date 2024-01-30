@@ -19,7 +19,7 @@ uses
   FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
   FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.FMXUI.Wait, FireDAC.DApt,
   FMX.Grid.Style, Fmx.Bind.Grid, Data.Bind.Grid, FMX.ScrollBox, FMX.Grid,
-  ADato.Controls.FMX.Tree.Intf;
+  ADato.Controls.FMX.Tree.Intf, System.ComponentModel;
 
 type
   {$M+}
@@ -51,12 +51,17 @@ type
     BindingsList1: TBindingsList;
     LinkControlToField1: TLinkControlToField;
     Button6: TButton;
+    Button7: TButton;
+    Button8: TButton;
     procedure acCollapseExecute(Sender: TObject);
     procedure acExpandExecute(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
+    procedure FMXTreeControl1AddingNew(Sender: TObject; Args: AddingNewEventArgs);
     procedure TDatasetClick(Sender: TObject);
     procedure FMXTreeControl1LayoutColumnsComplete(Sender: TObject; e: EventArgs);
     procedure Timer1Timer(Sender: TObject);
@@ -100,7 +105,8 @@ uses
   ADato.ObjectModel.List.Tracking.intf,
   ADato.ObjectModel.List.Tracking.impl, System.Collections,
   ADato.ObjectModel.Binders,
-  ADato.Data.DataModel.impl, ADato.InsertPosition;
+  ADato.Data.DataModel.impl, ADato.InsertPosition, ADato.ObjectModel.List.impl,
+  System.TypInfo;
 
 {$R *.fmx}
 
@@ -121,7 +127,7 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  var model: IObjectListModel := TObjectListModelWithChangeTracking<ICompany>.Create();
+  var model: IObjectListModel := TObjectListModelWithChangeTracking<ICompany>.Create(function: ICompany begin Result := TCompany.Create; end);
   model.Context := CreateCompanyList as IList;
 
   var bind := TPropertyBinding.CreateBindingByControl(edNameByBinding);
@@ -157,7 +163,36 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-  ShowMessage(FDMemTable1.FieldByName('Name').AsString);
+  if FMXTreeControl1.Model <> nil then
+    (FMXTreeControl1.Model as IEditableModel).AddNew(FMXTreeControl1.Current, InsertPosition.Before) else
+    FMXTreeControl1.InsertRow(InsertPosition.Before);
+end;
+
+procedure TForm1.Button7Click(Sender: TObject);
+begin
+  var c: ICompany := TCompany.Create;
+  var v: Variant := c;
+  var tv := TValue.From<Variant>(v);
+
+  var ii := IInterface(tv.AsVariant);
+  var tp: PTypeInfo := TypeInfo(ICompany);
+  var ic: ICompany;
+  if Interfaces.Supports(ii, TGUID(tp^.TypeData.IntfGuid), ic) then
+    ShowMessage('Yes');
+
+  var o := CObject.From<Variant>(v);
+  var i := o.AsType<ICompany>;
+end;
+
+procedure TForm1.Button8Click(Sender: TObject);
+begin
+  var model: IObjectListModel := TObjectListModel<ICompany>.Create;
+  model.Context := CreateCompanyList as IList;
+
+  var bind := TPropertyBinding.CreateBindingByControl(edNameByBinding);
+  model.ObjectModelContext.Bind('Name', bind);
+
+  FMXTreeControl1.Model := model;
 end;
 
 function TForm1.CreateCompanyList: List<ICompany>;
@@ -170,6 +205,12 @@ begin
     c.Name := 'Company ' + i.ToString;
     Result.Add(c);
   end;
+end;
+
+procedure TForm1.FMXTreeControl1AddingNew(Sender: TObject; Args: AddingNewEventArgs);
+begin
+  var c: ICompany := TCompany.Create;
+  Args.NewObject := c;
 end;
 
 procedure TForm1.TDatasetClick(Sender: TObject);

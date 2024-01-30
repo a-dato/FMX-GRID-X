@@ -1,4 +1,4 @@
-﻿unit ADato.Models.ContextUpdater.impl;
+﻿unit ADato.Models.DataModelUpdater.impl;
 
 interface
 
@@ -10,7 +10,7 @@ uses
   ADato.Models.ContextUpdater.intf;
 
 type
-  TObjectModelContextUpdater = class(TBaseInterfacedObject, IObjectModelContextUpdater)
+  TDataModelModelContextUpdater = class(TBaseInterfacedObject, IObjectModelContextUpdater)
   protected
     [weak] _model: IObjectListModelChangeTracking;
 
@@ -31,7 +31,7 @@ implementation
 uses
   ADato.Data.DataModel.intf;
 
-procedure TObjectModelContextUpdater.DoAddNew(const Value: CObject; var &Index: Integer; Position: InsertPosition);
+procedure TDataModelModelContextUpdater.DoAddNew(const Value: CObject; var &Index: Integer; Position: InsertPosition);
 var
   location: IDataRow;
   dataRow: IDataRow;
@@ -41,11 +41,8 @@ begin
   var o := _model.ObjectContext;
 
   if not Interfaces.Supports<IDataModel>(_model.Context, dm) then
-  begin
-    _model.Context.Insert(&Index, Value);
-    Exit;
-  end;
-  
+    raise NotSupportedException.Create('Context must implement IDataModel');
+
   var current := dm.DefaultCurrencyManager.Current;
   var count: Integer := dm.DefaultView.Rows.Count;
   if (current < count) and (count > 0) then
@@ -73,56 +70,41 @@ begin
   end;
 end;
 
-function TObjectModelContextUpdater.DoRemove(const Value: CObject; out Index: Integer): CObject;
+function TDataModelModelContextUpdater.DoRemove(const Value: CObject; out Index: Integer): CObject;
 var
   dm: IDataModel;
 begin
   Result := nil;
 
-  if Interfaces.Supports<IDataModel>(_model.Context, dm) then
+  if not Interfaces.Supports<IDataModel>(_model.Context, dm) then
+    raise NotSupportedException.Create('Context must implement IDataModel');
+
+  var dr := dm.FindByKey(Value);
+  if dr <> nil then
   begin
-    var dr := dm.FindByKey(Value);
-    if dr <> nil then
+    var drv := dm.DefaultView.FindRow(dr);
+    if drv = nil then
     begin
-      var drv := dm.DefaultView.FindRow(dr);
-      if drv = nil then
-      begin
-        if not dm.DefaultView.MakeRowVisible(dr) then
-          Exit;
+      if not dm.DefaultView.MakeRowVisible(dr) then
+        Exit;
 
-        drv := dm.DefaultView.FindRow(dr);
-      end;
-
-      {out} Index := drv.ViewIndex;
-      if Index > 0 then
-        Result := dm.DefaultView.Rows[Index - 1].Row.Data
-      else if dm.DefaultView.Rows.Count > 1 then
-        Result := dm.DefaultView.Rows[1].Row.Data
-      else
-        Result := nil;
-
-      dm.DefaultCurrencyManager.Current := Index;
-      dm.Remove(dr);
+      drv := dm.DefaultView.FindRow(dr);
     end;
-  end
-  else
-  begin
-    {out} Index := _model.Context.IndexOf(Value);
-    if Index <> -1 then
-    begin
-      if Index > 0 then
-        Result := _model.Context[Index - 1]
-      else if _model.Context.Count > 1 then
-        Result := _model.Context[1]
-      else
-        Result := nil;
 
-      _model.Context.RemoveAt(Index);
-    end;
+    {out} Index := drv.ViewIndex;
+    if Index > 0 then
+      Result := dm.DefaultView.Rows[Index - 1].Row.Data
+    else if dm.DefaultView.Rows.Count > 1 then
+      Result := dm.DefaultView.Rows[1].Row.Data
+    else
+      Result := nil;
+
+    dm.DefaultCurrencyManager.Current := Index;
+    dm.Remove(dr);
   end;
 end;
 
-function TObjectModelContextUpdater.RetrieveUpdatedItems: Dictionary<CObject, TObjectListChangeType>;
+function TDataModelModelContextUpdater.RetrieveUpdatedItems: Dictionary<CObject, TObjectListChangeType>;
 var
   obj: CObject;
   changeType: TObjectListChangeType;
@@ -147,7 +129,7 @@ begin
       Result.Add(obj, TObjectListChangeType.Removed);
 end;
 
-function TObjectModelContextUpdater.ConvertToDataItem(const Value: CObject): CObject;
+function TDataModelModelContextUpdater.ConvertToDataItem(const Value: CObject): CObject;
 var
   drv: IDataRowView;
 begin
@@ -156,12 +138,12 @@ begin
     Result := Value;
 end;
 
-class function TObjectModelContextUpdater.CreateNew: IObjectModelContextUpdater;
+class function TDataModelModelContextUpdater.CreateNew: IObjectModelContextUpdater;
 begin
-  Result := TObjectModelContextUpdater.Create;
+  Result := TDataModelModelContextUpdater.Create;
 end;
 
-procedure TObjectModelContextUpdater.set_Model(const Value: IObjectListModelChangeTracking);
+procedure TDataModelModelContextUpdater.set_Model(const Value: IObjectListModelChangeTracking);
 begin
   _model := Value;
 end;

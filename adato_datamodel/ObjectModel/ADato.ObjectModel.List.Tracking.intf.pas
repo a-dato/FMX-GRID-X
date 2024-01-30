@@ -61,14 +61,16 @@ type
 
   IEditableModel = interface(IBaseInterface)
     ['{23545838-1360-4F0E-BD26-1F07F25B9A37}']
-    procedure AddNew(Index: Integer; Position: InsertPosition);
+    function  AddNew(Index: Integer; Position: InsertPosition) : Boolean;
     procedure BeginEdit(ItemIndex: Integer);
     procedure CancelEdit;
     procedure EndEdit;
     procedure Remove;{$IFDEF DEBUG}overload;{$ENDIF}
-    {$IFDEF DEBUG}
-    procedure Remove(Item: CObject);overload;
-    {$ENDIF}
+
+//    {$IFDEF DEBUG}
+    // KV: Should be part of IEditableListObject??
+//    procedure Remove(Item: CObject);overload;
+//    {$ENDIF}
 
     function CanAdd : Boolean;
     function CanEdit : Boolean;
