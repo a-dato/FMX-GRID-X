@@ -4555,8 +4555,8 @@ begin
     if TreeState.AlignViewToCurrent in _InternalState then
       AlignViewToCurrent(nil) //AlignViewToCurrent(top_row);
     else
-      // list of rows should start from TopRow
-      if (TreeState.DataChanged in _InternalState) and (lTopRow <> nil) then
+      // list of rows should start from TopRow, check if _view contains rows for rows can be filtered out
+      if (TreeState.DataChanged in _InternalState) and (lTopRow <> nil) and (_view.Count > 0) then
       begin
        { Workaround for case: Select row50 (just to show  that case is not related to selected row status), scroll to
          the TOP ROW = 600, full refresh (TreeState_DataChanged). Result: Tree draws from row0.
