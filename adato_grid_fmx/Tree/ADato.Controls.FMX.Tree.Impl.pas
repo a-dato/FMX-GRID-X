@@ -360,12 +360,12 @@ type
 
     _listHoldsOrdinalType: Boolean;
     _IsNewItem      : Boolean;
-    _ColumnPropertyInfos: PropertyInfoArray;
-    _Current        : Integer;
-    _RowHeights     : IFMXRowHeightCollection;
+    _columnPropertyInfos: PropertyInfoArray;
+    _current        : Integer;
+    _rowHeights     : IFMXRowHeightCollection;
     _sortComplete   : Boolean;
     _ListSupportsNotifyCollectionChanged : Boolean;
-    _UpdateCount    : Integer;
+    _updateCount    : Integer;
 
     procedure BeginUpdate;
     function  BaseListCount: Integer;
@@ -1403,7 +1403,7 @@ type
     function  DoGetToolTip(const HitInfo: ITreeHitInfo): CString;
     procedure EditorExit(Sender: TObject);
     procedure EditorKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
-    function  InternalInsertRow(Position: InsertPosition; UpdateModel: Boolean): Boolean;
+    function  InternalInsertRow(Position: InsertPosition): Boolean;
     function  InternalRemoveRow(UpdateModel: Boolean): Boolean;
     procedure DefineProperties(Filer: TFiler); override;
     procedure Loaded; override;
@@ -4737,44 +4737,55 @@ begin
   end;
 end;
 
-function TCustomTreeControl.InternalInsertRow(Position: InsertPosition; UpdateModel: Boolean): Boolean;
+function TCustomTreeControl.InternalInsertRow(Position: InsertPosition): Boolean;
 begin
-  if _View = nil then
-    Exit(False);
+  Result := False;
 
+  if _View = nil then
+    Exit;
+
+  {$IFDEF DEBUG}
+  // Must complete any Edit operation befroe we can insert a row
+  if not EndEdit then
+    Exit;
+  {$ELSE}
   // if _model <> nil, then let _model take control over EndEdit
   if _Model = nil then
     EndEdit;
+  {$ENDIF}
 
-  if UpdateModel then
+  var em: IEditableModel;
+  if Interfaces.Supports<IEditableModel>(_Model, em) then
   begin
-    var em: IEditableModel;
-    if Interfaces.Supports<IEditableModel>(_Model, em) then
+    var u: IUpdatableObject;
+    if Interfaces.Supports<IUpdatableObject>(_modelListItemChanged, u) then
     begin
-      var u: IUpdatableObject;
-      if Interfaces.Supports<IUpdatableObject>(_modelListItemChanged, u) then
-      begin
-        try
-          u.BeginUpdate;
-          if Position = InsertPosition.Before then
-            em.AddNew(View.Transpose(Current), InsertPosition.Before)
-          else if Position = InsertPosition.After then
-            em.AddNew(View.Transpose(Current), InsertPosition.After)
-          else
-            em.AddNew(-1, InsertPosition.After);
-        finally
-          u.EndUpdate
-        end
-      end else
-        em.AddNew(View.Transpose(Current), InsertPosition.Before);
-    end;
-  end;
+      try
+        u.BeginUpdate;
+        Result := em.AddNew(View.Transpose(Current), Position);
 
-  SaveCurrentDataItemOff;
-  try
-    Result := View.InsertRow(Position);
-  finally
-    SaveCurrentDataItemOn;
+//        if Position = InsertPosition.Before then
+//          em.AddNew(View.Transpose(Current), InsertPosition.Before)
+//        else if Position = InsertPosition.After then
+//          em.AddNew(View.Transpose(Current), InsertPosition.After)
+//        else
+//          em.AddNew(-1, InsertPosition.After);
+      finally
+        u.EndUpdate
+      end
+    end else
+      Result := em.AddNew(View.Transpose(Current), Position);
+  end else
+    Result := True;
+
+  if Result then
+  begin
+    SaveCurrentDataItemOff;
+    try
+      Result := View.InsertRow(Position);
+    finally
+      SaveCurrentDataItemOn;
+    end;
   end;
 end;
 
@@ -4819,8 +4830,9 @@ end;
 
 function TCustomTreeControl.InsertRow(Position: InsertPosition): Boolean;
 begin
-  // this is Model not DataModelView
-  // Result := InternalInsertRow(Position, True);
+  {$IFDEF DEBUG}
+  Result := InternalInsertRow(Position);
+  {$ELSE}
   if _View = nil then
     Exit(False);
 
@@ -4835,6 +4847,7 @@ begin
   finally
     SaveCurrentDataItemOn;
   end;
+  {$ENDIF}
 end;
 
 function TCustomTreeControl.DeleteRow: Boolean;
@@ -10742,24 +10755,6 @@ begin
     Result := TFMXTreeControl(_Control).DefaultRowHeight;
 end;
 
-// moved into TBaseDataModelViewList<T>.FindRow which overrides TBaseViewList<T>.FindRow(const ARow: T)
-//function TTreeDataModelViewRowList.FindRow(const ARow: ITreeRow): Integer;
-//var
-//  drv: IDataRowView;
-//begin
-//  var rowData: CObject := ARow.DataItem.AsType<IDataRowView>.Row.Data;
-//
-//
-//  // Mixed indexes in View and _dataModelView. Fix TTreeDataModelViewRowList.FindRow
-//  // this code returns a row from _dataModelView but this row may not exist in View but FindRow returns index >= 0
-//  // reproduced while using a row from another Control View while NegotiateRowHeight proc.
-////  drv := Interfaces.ToInterface(ARow.DataItem) as IDataRowView;
-////  drv := _dataModelView.FindRow(drv.Row);
-////  if drv <> nil then
-////    Result := drv.ViewIndex - get_TopRow else
-////    Result := -1;
-//end;
-
 function TTreeDataModelViewRowList.InsertRow(Position: InsertPosition): Boolean;
 var
   location: IDataRow;
@@ -10769,26 +10764,22 @@ var
 begin
   _EditItem := nil;
 
-  if TFMXTreeControl(_Control).Model <> nil then
-    o := TFMXTreeControl(_Control).Model.ObjectContext
   // Let tree call AddingNew event handler
-  else if not TFMXTreeControl(_Control).DoAddingNew(o) then
+  if not TFMXTreeControl(_Control).DoAddingNew(o) then
     Exit(False);
 
   if (Current < Count) and (Count > 0) then
     location := _dataModelView.Rows[Current].Row else
     location := nil;
 
-  if o = nil then
-    dataRow := _dataModelView.DataModel.AddNew(location, Position)
-  else if (location <> nil) and (location.Data <> nil) then
-    dataRow := _dataModelView.DataModel.Add(o, location.Data, position)
-  else
-    dataRow := _dataModelView.DataModel.Add(o, nil, position);
+  dataRow := _dataModelView.DataModel.AddNew(location, Position);
 
   if dataRow <> nil then
   begin
     Result := True;
+
+    if o <> nil then
+      dataRow.Data := o;
 
     drv := _dataModelView.FindRow(dataRow);
     if drv <> nil then
@@ -10799,6 +10790,46 @@ begin
   end else
     Result := False;
 end;
+
+//function TTreeDataModelViewRowList.InsertRow(Position: InsertPosition): Boolean;
+//var
+//  location: IDataRow;
+//  dataRow: IDataRow;
+//  drv: IDataRowView;
+//  o: CObject;
+//begin
+//  _EditItem := nil;
+//
+//  if TFMXTreeControl(_Control).Model <> nil then
+//    o := TFMXTreeControl(_Control).Model.ObjectContext
+//  // Let tree call AddingNew event handler
+//  else if not TFMXTreeControl(_Control).DoAddingNew(o) then
+//    Exit(False);
+//
+//  if (Current < Count) and (Count > 0) then
+//    location := _dataModelView.Rows[Current].Row else
+//    location := nil;
+//
+//  if o = nil then
+//    dataRow := _dataModelView.DataModel.AddNew(location, Position)
+//  else if (location <> nil) and (location.Data <> nil) then
+//    dataRow := _dataModelView.DataModel.Add(o, location.Data, position)
+//  else
+//    dataRow := _dataModelView.DataModel.Add(o, nil, position);
+//
+//  if dataRow <> nil then
+//  begin
+//    Result := True;
+//
+//    drv := _dataModelView.FindRow(dataRow);
+//    if drv <> nil then
+//    begin
+//      _EditItem := drv;
+//      Current := drv.ViewIndex;
+//    end;
+//  end else
+//    Result := False;
+//end;
 
 function TTreeDataModelViewRowList.IsEdit(const Row: ITreeRow): Boolean;
 var
@@ -12527,8 +12558,9 @@ begin
   Result := False;
   NewItem := nil;
 
-  var objectWasCreated := _treeControl.Model <> nil;
-  if _treeControl.Model <> nil then
+  // Insertion handled by external model?
+  var supportsEditable := Interfaces.Supports<IEditableModel>(_treeControl.Model);
+  if supportsEditable then
     NewItem := _treeControl.Model.ObjectContext
 
   else begin
@@ -12547,7 +12579,13 @@ begin
           NewItem := ''
 
         else if (_data.Count > 0) then
-          NewItem := Assembly.CreateInstanceFromObject(_data[0]);
+        begin
+          var obj: CObject := Assembly.CreateInstanceFromObject(_data[0]);
+          if obj = nil then
+            raise NullReferenceException.Create(CString.Format('Failed to create instance of object {0}, implement event OnAddingNew', _data[0].GetType));
+          if not obj.TryCast(TypeOf(_data[0]), {out} NewItem, True) then
+            raise NullReferenceException.Create(CString.Format('Failed to convert {0} to {1}, implement event OnAddingNew', obj.GetType, _data[0].GetType));
+        end;
       end;
     end;
   end;
@@ -12557,7 +12595,9 @@ begin
     var ownerPos: Integer := -1;
     if _Current = -1 then
       ownerPos := 0
-    else if Position = InsertPosition.After then
+    else if Position = InsertPosition.Before then
+      ownerPos := _current
+    else // if Position = InsertPosition.After then
       ownerPos := _current + 1;
 
     _EditItem := NewItem;
@@ -12565,7 +12605,7 @@ begin
 
     if (_treeControl.ListComparer <> nil) and (_treeControl.ListComparer.SortedRows <> nil) then
     begin
-      if not objectWasCreated then
+      if not supportsEditable then
         _data.Add(NewItem);
 
       // IComparableList takes care of it's own sorting in this case
@@ -12575,10 +12615,11 @@ begin
       _Current := _data.IndexOf(NewItem);
     end else
     begin
-      if not objectWasCreated then
+      // Row has already been inserted by the model
+      if not supportsEditable then
         _data.Insert(ownerPos, NewItem);
 
-      _Current := ownerPos;
+      _current := ownerPos;
     end;
 
     if not _ListSupportsNotifyCollectionChanged then

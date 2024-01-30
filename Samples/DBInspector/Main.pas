@@ -85,6 +85,9 @@ type
     edSchema: TEdit;
     SpeedButton5: TSpeedButton;
     acMoveData: TAction;
+    lblConnection: TLabel;
+    Label1: TLabel;
+    Label2: TLabel;
 
     procedure acAddConnectionExecute(Sender: TObject);
     procedure acExecuteQueryExecute(Sender: TObject);
@@ -333,29 +336,36 @@ begin
   if DataBaseName <> '' then
     fdConnection.Params.Database := DataBaseName;
 
-  fdConnection.LoginPrompt := false;
+  fdConnection.LoginPrompt := False;
 
-  while not fdConnection.Connected do
-  try
-    fdConnection.Connected := true;
-  except
-    if not fdConnection.LoginPrompt then
-      fdConnection.LoginPrompt := True
-    else
-    begin
-      if passwords <> nil then
-        passwords.Values[fdConnection.Params.UserName] := '';
-      raise;
+
+  TThread.CreateAnonymousThread(procedure begin
+
+    while not fdConnection.Connected do
+    try
+      fdConnection.Connected := True;
+    except
+      if not fdConnection.LoginPrompt then
+        fdConnection.LoginPrompt := True
+      else
+      begin
+        if passwords <> nil then
+          passwords.Values[fdConnection.Params.UserName] := '';
+        raise;
+      end;
     end;
-  end;
 
-  cbDatabases.Enabled := fdConnection.Connected;
-  // miExport.Enabled := fdConnection.Connected;
+    TThread.Queue(nil, procedure begin
+      cbDatabases.Enabled := fdConnection.Connected;
+      // miExport.Enabled := fdConnection.Connected;
 
-  if fdConnection.Connected then
-    UpdateConnectionForTab(FirstTab, True);
+      if fdConnection.Connected then
+        UpdateConnectionForTab(FirstTab, True);
 
-  LoadDataBases;
+      LoadDataBases;
+    end);
+  end).Start;
+
 end;
 
 procedure TfrmInspector.DBIndexesCellChanged(Sender: TCustomTreeControl; e: CellChangedEventArgs);

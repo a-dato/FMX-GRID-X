@@ -2635,7 +2635,7 @@ type
 
   function TypeFromName(const typeName: CString; throwOnError: Boolean): &Type;
   function TypeToString(const _type: &Type): CString;
-  function TypeOf(const IID: TGUID) : TGUID; overload;
+  function TypeOf(const O: CObject) : &Type; overload;
 
   procedure GlobalInitialization;
   procedure GlobalFinalization;
@@ -2731,9 +2731,14 @@ asm
 end;
 {$ENDIF}
 
-function TypeOf(const IID: TGUID) : TGUID;
+// Implements the X# way of handling type info. Calling TypeOf on a interface
+// returns the type info for the interface. Calling CObject.GetType will
+// return the type of the implementing class.
+function TypeOf(const O: CObject) : &Type;
 begin
-  Result := IID;
+  if O.IsInterface then
+    Result := &Type.Create(O.FValue.TypeInfo) else
+    Result := O.GetType;
 end;
 
 //
@@ -4692,16 +4697,21 @@ end;
 
 class function Interfaces.Supports(const Value: CObject; const IID: TGUID): Boolean;
 var
-  t: System.TTypeKind;
+  tp: PTypeInfo;
+
 begin
   if Value = nil then
     Exit(False);
 
-  t := Value.FValue.TypeInfo.Kind;
+  tp := Value.FValue.TypeInfo;
 
-  if t = tkInterface then
-    Result := SysUtils.Supports(IInterface(Value.FValue.GetReferenceToRawData^), IID)
-  else if t = tkClass then
+  if tp.Kind = tkInterface then
+  begin
+    if tp = TypeInfo(IAutoObject) then
+      Result := SysUtils.Supports(Value.FValue.AsType<IAutoObject>.&Object, IID) else
+      Result := SysUtils.Supports(IInterface(Value.FValue.GetReferenceToRawData^), IID)
+  end
+  else if tp.Kind = tkClass then
     Result := SysUtils.Supports(Value.FValue.AsObject, IID)
   else
     Result := False;
@@ -4709,17 +4719,21 @@ end;
 
 class function Interfaces.Supports(const Value: CObject; const IID: TGUID; out Intf) : Boolean;
 var
-  t: System.TTypeKind;
+  tp: PTypeInfo;
 
 begin
   if Value = nil then
     Exit(False);
 
-  t := Value.FValue.TypeInfo.Kind;
+  tp := Value.FValue.TypeInfo;
 
-  if t = tkInterface then
-    Result := SysUtils.Supports(IInterface(Value.FValue.GetReferenceToRawData^), IID, intf)
-  else if t = tkClass then
+  if tp.Kind = tkInterface then
+  begin
+    if tp = TypeInfo(IAutoObject) then
+      Result := SysUtils.Supports(Value.FValue.AsType<IAutoObject>.&Object, IID, intf) else
+      Result := SysUtils.Supports(IInterface(Value.FValue.GetReferenceToRawData^), IID, intf)
+  end
+  else if tp.Kind = tkClass then
     Result := SysUtils.Supports(Value.FValue.AsObject, IID, intf)
   else
     Result := False;
@@ -5373,15 +5387,7 @@ end;
 
 class function Convert.ToVariant(const Value: CObject): Variant;
 begin
-  {$IFDEF DEBUG}
-  try
-    Result := Value.AsType<Variant>;
-  except
-    Result := Value.AsType<Variant>;
-  end;
-  {$ELSE}
   Result := Value.AsType<Variant>;
-  {$ENDIF}
 end;
 
 class function Convert.ToObject(const Value: CObject): TObject;
@@ -8575,7 +8581,8 @@ end;
 
 class operator CObject.Explicit(const AValue: CObject): string;
 begin
-  Result := CStringToString(AValue.ToString(True));
+  Result := AValue.AsType<string>;
+  // Result := CStringToString(AValue.ToString(True));
 end;
 
 class operator CObject.Explicit(const AValue: CObject): TGuid;
@@ -9100,20 +9107,6 @@ begin
 
           Result := value_t.TryCast(ATypeInfo, Value);
         end
-//        // Object to interface cast
-//        else if ATypeInfo.Kind = tkInterface then
-//        begin
-//          var obj: TObject;
-//          if FValue.TryAsType<IAutoObject>(a) then
-//            obj := a.&Object else
-//            obj := FValue.AsObject;
-//
-//          if Interfaces.Supports(obj, TGUID(ATypeInfo.TypeData.IntfGuid), ii) then
-//          begin
-//            TValue.Make(@ii, ATypeInfo, value_t);
-//            Result := value_t.TryCast(ATypeInfo, Value);
-//          end;
-//        end;
       end;
 
       TypeCode.Int32:
@@ -9350,6 +9343,20 @@ begin
             Result := value_t.TryCast(ATypeInfo, Value);
           end;
         end;
+
+    TypeCode.Variant:
+        // Variant -> Interface
+        if ATypeInfo.Kind = tkInterface then
+        begin
+          var v := FValue.AsVariant;
+          if VarIsNull(v) then
+            Result := True  // result is a nil interface
+          else if Interfaces.Supports(IInterface(v), TGUID(ATypeInfo.TypeData.IntfGuid), ii) then
+          begin
+            TValue.Make(@ii, ATypeInfo, value_t);
+            Result := value_t.TryCast(ATypeInfo, Value);
+          end;
+       end;
     end;
   end;
 end;
@@ -9546,25 +9553,12 @@ begin
 
   if &Type.GetTypeCode(FValue.TypeInfo) = TypeCode.Interface then
   begin
+    // Comply with C# way of operation, calling GetType on an interface will return
+    // the type of the object implementing the interface
     var o := TObject(FValue.AsInterface);
     Result := &Type.Create(o.ClassInfo);
   end else
     Result := &Type.Create(FValue.TypeInfo);
-
-//  case &Type.GetTypeCode(FValue.TypeInfo) of
-//    TypeCode.Object:
-//      Result := &Type.Create(FValue.TypeInfo);
-//
-//    TypeCode.Interface:
-//    begin
-//      // Comply with C# way of operation, calling GetType on an interface will return
-//      // the type of the object implementing the interface
-//      o := TObject(FValue.AsInterface);
-//      Result := &Type.Create(o.ClassInfo);
-//    end;
-//  else
-//    Result := &Type.Create(FValue.TypeInfo);
-//  end;
 end;
 
 function CObject.IsNull : Boolean;

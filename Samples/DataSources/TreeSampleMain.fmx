@@ -3,15 +3,15 @@ object Form1: TForm1
   Top = 0
   Caption = 'Form1'
   ClientHeight = 487
-  ClientWidth = 699
+  ClientWidth = 757
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
   DesignerMasterStyle = 0
   object FMXTreeControl1: TFMXTreeControl
     Align = Client
-    Size.Width = 500.000000000000000000
-    Size.Height = 446.000000000000000000
+    Size.Width = 558.000000000000000000
+    Size.Height = 406.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
     AcceptsTab = False
@@ -26,14 +26,15 @@ object Form1: TForm1
     ScrollPerRow = False
     DefaultExpandRows = False
     HighlightRows = True
+    AddingNew = FMXTreeControl1AddingNew
     LayoutColumnsComplete = FMXTreeControl1LayoutColumnsComplete
-    Viewport.Width = 498.000000000000000000
-    Viewport.Height = 419.000000000000000000
+    Viewport.Width = 556.000000000000000000
+    Viewport.Height = 379.000000000000000000
   end
   object Layout1: TLayout
     Align = Top
-    Size.Width = 699.000000000000000000
-    Size.Height = 41.000000000000000000
+    Size.Width = 757.000000000000000000
+    Size.Height = 81.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
     object Button1: TButton
@@ -46,20 +47,30 @@ object Form1: TForm1
       Text = 'List<ICompany>'
       TextSettings.Trimming = None
       OnClick = Button1Click
+      object Button8: TButton
+        Position.Y = 30.000000000000000000
+        Size.Width = 137.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 5
+        Text = 'IModel<ICompany>'
+        TextSettings.Trimming = None
+        OnClick = Button8Click
+      end
     end
     object Button2: TButton
-      Position.X = 145.000000000000000000
-      Position.Y = 11.000000000000000000
-      Size.Width = 136.000000000000000000
+      Position.X = 153.000000000000000000
+      Position.Y = 41.000000000000000000
+      Size.Width = 168.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
-      Text = 'model<ICompany>'
+      Text = 'IEditableModel<ICompany>'
       TextSettings.Trimming = None
       OnClick = Button2Click
     end
     object Button3: TButton
-      Position.X = 289.000000000000000000
+      Position.X = 153.000000000000000000
       Position.Y = 11.000000000000000000
       Size.Width = 144.000000000000000000
       Size.Height = 22.000000000000000000
@@ -70,7 +81,7 @@ object Form1: TForm1
       OnClick = Button3Click
     end
     object TDataset: TButton
-      Position.X = 441.000000000000000000
+      Position.X = 305.000000000000000000
       Position.Y = 11.000000000000000000
       TabOrder = 3
       Text = 'TDataset'
@@ -80,10 +91,10 @@ object Form1: TForm1
   end
   object Layout2: TLayout
     Align = Right
-    Position.X = 500.000000000000000000
-    Position.Y = 41.000000000000000000
+    Position.X = 558.000000000000000000
+    Position.Y = 81.000000000000000000
     Size.Width = 199.000000000000000000
-    Size.Height = 446.000000000000000000
+    Size.Height = 406.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 3
     object edNameByBinding: TEdit
@@ -136,9 +147,17 @@ object Form1: TForm1
       Position.X = 96.000000000000000000
       Position.Y = 176.000000000000000000
       TabOrder = 4
-      Text = 'Button6'
+      Text = 'Model.Insert'
       TextSettings.Trimming = None
       OnClick = Button6Click
+      object Button7: TButton
+        Position.X = 8.000000000000000000
+        Position.Y = 32.000000000000000000
+        TabOrder = 5
+        Text = 'Button7'
+        TextSettings.Trimming = None
+        OnClick = Button7Click
+      end
     end
   end
   object ActionList1: TActionList

@@ -66,12 +66,12 @@ type
     function  get_IsEditOrNew: Boolean;
 
     // IEditableModel
-    procedure AddNew(Index: Integer; Position: InsertPosition);
+    function  AddNew(Index: Integer; Position: InsertPosition) : Boolean;
     procedure BeginEdit(Index: Integer);
     procedure CancelEdit;
     procedure EndEdit; virtual;
     procedure Remove; overload;
-    procedure Remove(Item: CObject); overload;
+    procedure Remove(const Item: CObject); overload;
 
     function CanAdd : Boolean;
     function CanEdit : Boolean;
@@ -94,7 +94,11 @@ type
     function CreateInstance: CObject;
   public
     constructor Create; overload; override;
-    constructor Create(const ContextUpdater: IObjectModelContextUpdater); overload;
+
+    // Duplicate of Create(const ContextUpdater: IObjectModelContextUpdater; const CreatorFunc: TFunc<T> = nil); overload;
+    // constructor Create(const ContextUpdater: IObjectModelContextUpdater); overload;
+
+    constructor Create(const CreatorFunc: TFunc<T> = nil); overload;
     constructor Create(const ContextUpdater: IObjectModelContextUpdater; const CreatorFunc: TFunc<T> = nil); overload;
 
     {$IFDEF DEBUG_XX}
@@ -153,8 +157,10 @@ uses
 
 { TObjectListModel<T> }
 
-procedure TObjectListModelWithChangeTracking<T>.AddNew(Index: Integer; Position: InsertPosition);
+function TObjectListModelWithChangeTracking<T>.AddNew(Index: Integer; Position: InsertPosition) : Boolean;
 begin
+  Result := False;
+
   BeginUpdate;
   try
     var item := CreateInstance;
@@ -162,7 +168,10 @@ begin
     begin
       var e: IEditableListObject;
       if Interfaces.Supports<IEditableListObject>(get_ObjectModelContext, e) then
+      begin
+        Result := True;
         e.AddNew(item, Index, Position);
+      end;
     end;
   finally
     EndUpdate;
@@ -213,18 +222,23 @@ begin
   {$ENDIF}
 end;
 
-
-constructor TObjectListModelWithChangeTracking<T>.Create(const ContextUpdater: IObjectModelContextUpdater);
+constructor TObjectListModelWithChangeTracking<T>.Create(const CreatorFunc: TFunc<T>);
 begin
   Create;
 
-  _contextUpdater := ContextUpdater;
-  _contextUpdater.Model := Self;
+  _CreatorFunc := CreatorFunc;
 end;
 
 constructor TObjectListModelWithChangeTracking<T>.Create(const ContextUpdater: IObjectModelContextUpdater; const CreatorFunc: TFunc<T>);
 begin
-  Create(ContextUpdater);
+  Create;
+
+  if ContextUpdater = nil then
+    raise ArgumentNullException.Create('ContextUpdater');
+
+  _contextUpdater := ContextUpdater;
+  _contextUpdater.Model := Self;
+
   _CreatorFunc := CreatorFunc;
 end;
 
@@ -294,7 +308,9 @@ end;
 
 function TObjectListModelWithChangeTracking<T>.RetrieveUpdatedItems: Dictionary<CObject, TObjectListChangeType>;
 begin
-  Result := _contextUpdater.RetrieveUpdatedItems;
+  if _contextUpdater <> nil then
+    Result := _contextUpdater.RetrieveUpdatedItems else
+    Result := _ChangedItems;
 end;
 
 procedure TObjectListModelWithChangeTracking<T>.UpdateEditContext(const Context: IObjectModelContext; Cancel: Boolean);
@@ -502,7 +518,9 @@ end;
 
 procedure TObjectListModelWithChangeTracking<T>.NotifyAddingNew(const Context: IObjectModelContext; var Index: Integer; Position: InsertPosition);
 begin
-  _contextUpdater.DoAddNew(Context.Context, Index, Position);
+  if _contextUpdater <> nil then
+    _contextUpdater.DoAddNew(Context.Context, Index, Position) else
+    _Context.Insert(&Index, Context.Context);
 
   UpdateEditContext(Context);
 
@@ -526,14 +544,30 @@ begin
   end;
 end;
 
-procedure TObjectListModelWithChangeTracking<T>.Remove(Item: CObject);
+procedure TObjectListModelWithChangeTracking<T>.Remove(const Item: CObject);
 begin
   if Item = nil then Exit;
 
   UpdateEditContext(nil, True);
 
   var ix: Integer;
-  var newSelected := _contextUpdater.DoRemove(Item, {out} ix);
+  var newSelected: CObject;
+  if _contextUpdater <> nil then
+    newSelected := _contextUpdater.DoRemove(Item, {out} ix)
+  else
+  begin
+    ix := _Context.IndexOf(Item);
+    if ix <> -1 then
+    begin
+      if ix > 0 then
+        newSelected := _Context[ix - 1]
+      else if _Context.Count > 1 then
+        newSelected := _Context[1];
+
+      _Context.RemoveAt(ix);
+    end;
+
+  end;
   NotifyRemoved(Item, ix);
 
   inherited set_ObjectContext(newSelected);
