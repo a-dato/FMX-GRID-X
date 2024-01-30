@@ -1703,6 +1703,11 @@ type
     function Clone: CObject;
   end;
 
+  IAssigneable = interface
+    ['{6E759D9A-A4DC-4F54-91CD-A6FDD56B3BB4}']
+    procedure AssignTo(const Other: CObject);
+  end;
+
   IComparer = interface
     ['{050CD2D1-2805-4A18-B200-A0F69880C2DB}']
     function Compare(const x, y: CObject): Integer;

@@ -11,7 +11,6 @@ uses
 
 type
   TObjectListChangeType = (Changed, Added, Removed);
-//  TAddNewPosition = (First, Before, After, Last, Child);
   IObjectListModelChangeTracking = interface;
 
   {$IFDEF DELPHI}
