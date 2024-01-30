@@ -4399,7 +4399,7 @@ end;
 
 procedure ECannotCastToInterface(const PType: PTypeInfo);
 begin
-  raise Exception.Create(CString.Format('Interface not supoorted: ''{0}''', string(PType.Name)));
+  raise Exception.Create(CString.Format('Interface not suported: ''{0}''', string(PType.Name)));
 end;
 
 { EventArgs }

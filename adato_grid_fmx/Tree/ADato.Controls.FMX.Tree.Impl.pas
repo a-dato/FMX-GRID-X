@@ -113,11 +113,7 @@ type
     _Control        : TControl; // can be custom user control, not only TCellItem
     _Index          : Integer;
     _Indent         : Single;
-    {$IFDEF DEBUG}
     [unsafe] _Row     : ITreeRow;
-    {$ELSE}
-    [weak] _Row     : ITreeRow;
-    {$ENDIF}
     _LayoutComplete : Boolean;
     _ColSpan        : Byte;
   private
@@ -128,11 +124,7 @@ type
   protected
     _UserShowsDataPartially: Boolean;
     _GridWasDrawn   : Boolean;
-    {$IFDEF DEBUG}
     [unsafe]_column   : ITreeColumn;
-    {$ELSE}
-    [weak]_column   : ITreeColumn;
-    {$ENDIF}
     function  get_Column: ITreeColumn;
     function  get_Control: TControl;
     procedure set_Control(const Value: TControl); virtual;
@@ -293,11 +285,7 @@ type
     _IsTemporaryRow : Boolean;
     _BackgroundRect : TRectangle; // cache it, because all frozen cells need this fill color from row style. All rows have background rectangle in style
   protected
-    {$IFDEF DEBUG}
     [unsafe] _Owner   : ITreeRowList;
-    {$ELSE}
-    [weak] _Owner   : ITreeRowList;
-    {$ENDIF}
     procedure UpdatePlusMinusFillerState; // in all cells
     function  get_Cells: ITreeCellList;
     //IOverwritableTreeRow
@@ -572,11 +560,7 @@ type
   private
     _MultilineEdit: Boolean;
   protected
-    {$IFDEF DEBUG}
     [unsafe] _treeControl: ITreeControl;
-    {$ELSE}
-    [weak] _treeControl: ITreeControl;
-    {$ENDIF}
     _AllowHide      : Boolean;
     _AllowMove      : Boolean;
     _AllowResize    : Boolean;
@@ -863,11 +847,7 @@ type
     ITreeColumnList)
 
   protected
-    {$IFDEF DEBUG}
     [unsafe] _treeControl: ITreeControl;
-    {$ELSE}
-    [weak] _treeControl: ITreeControl;
-    {$ENDIF}
 
     function  get_TreeControl: ITreeControl;
     procedure OnCollectionChanged(e: NotifyCollectionChangedEventArgs); override;
@@ -1292,11 +1272,7 @@ type
     _InternalState  : TreeStates;
     _IsPainting     : Boolean;
     _RepaintIndex   : Integer;
-    {$IFDEF DEBUG}
     [unsafe] _DefaultCheckBoxColumn: ITreeCheckBoxColumn;
-    {$ELSE}
-    [weak] _DefaultCheckBoxColumn: ITreeCheckBoxColumn;
-    {$ENDIF}
 
     _MouseTrackRect     : TRectF;
     _MouseTrackContentItem : ICellContent;
@@ -4744,15 +4720,9 @@ begin
   if _View = nil then
     Exit;
 
-  {$IFDEF DEBUG}
   // Must complete any Edit operation befroe we can insert a row
   if not EndEdit then
     Exit;
-  {$ELSE}
-  // if _model <> nil, then let _model take control over EndEdit
-  if _Model = nil then
-    EndEdit;
-  {$ENDIF}
 
   var em: IEditableModel;
   if Interfaces.Supports<IEditableModel>(_Model, em) then
@@ -4830,24 +4800,22 @@ end;
 
 function TCustomTreeControl.InsertRow(Position: InsertPosition): Boolean;
 begin
-  {$IFDEF DEBUG}
   Result := InternalInsertRow(Position);
-  {$ELSE}
-  if _View = nil then
-    Exit(False);
 
-  EditorEnd; //EndEdit;
-
-  if _listComparer <> nil then
-    _listComparer.ResetSortedRows(False);
-
-  SaveCurrentDataItemOff;
-  try
-    Result := View.InsertRow(Position);
-  finally
-    SaveCurrentDataItemOn;
-  end;
-  {$ENDIF}
+//  if _View = nil then
+//    Exit(False);
+//
+//  EditorEnd; //EndEdit;
+//
+//  if _listComparer <> nil then
+//    _listComparer.ResetSortedRows(False);
+//
+//  SaveCurrentDataItemOff;
+//  try
+//    Result := View.InsertRow(Position);
+//  finally
+//    SaveCurrentDataItemOn;
+//  end;
 end;
 
 function TCustomTreeControl.DeleteRow: Boolean;
@@ -4856,54 +4824,6 @@ begin
   if _listComparer <> nil then
     _listComparer.ResetSortedRows(False);
 end;
-
-//function TCustomTreeControl.CalculateCellIndent(
-//  const cell: ITreeCell;
-//  rowIndex: Integer) : Integer;
-//
-//var
-//  lvl               : Integer;
-//  prevRow           : ITreeRow;
-//  prevRowCell       : ITreeCell;
-//
-//  procedure GetParentRow;
-//  begin
-//    dec(rowIndex);
-//    while (rowIndex >= 0) do
-//    begin
-//      prevRow := _View[rowIndex];
-//      if (prevRow.Level <= lvl) then
-//        break;
-//      dec(rowIndex);
-//    end;
-//  end;
-//
-//begin
-//  Result := 0;
-//
-//  prevRow := cell.Row;
-//  lvl := prevRow.Level;
-//
-//  dec(lvl);
-//  if lvl < 0 then
-//    Exit;
-//
-//  GetParentRow;
-//
-//  while True do
-//  begin
-//    prevRowCell := GetSelectableCell(prevRow.Cells, cell.Index);
-////    if prevRowCell.Style = nil then
-////      prevRowCell.Style := GetCellStyle(prevRowCell);
-////    inc(Result, prevRowCell.Style.Hierarchy.Indent);
-//
-//    dec(lvl);
-//    if lvl < 0 then
-//      Exit;
-//
-//    GetParentRow;
-//  end;
-//end;
 
 procedure TCustomTreeControl.CancelEdit;
 var
@@ -6610,19 +6530,6 @@ begin
       Assert(GoDeep(Result.Control));
     {$ENDIF}
   end;
-
-//  begin
-//    {$IFDEF DEBUG}
-//    var s: string := row.DataItem.ToString;
-//    {$ENDIF}
-//
-//    for var i := 0 to row.Cells.Count - 1 do
-//    begin
-//      var cell := row.Cells[i];
-//      if GoDeep(cell.Control) then
-//        Exit(cell);
-//    end;
-//  end;
 end;
 
 procedure TCustomTreeControl.Clear;
