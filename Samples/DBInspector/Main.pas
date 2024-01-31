@@ -479,34 +479,36 @@ var
   password: string;
   username: string;
 begin
-  username := AConnection.Params.UserName;
+  TThread.Synchronize(nil, procedure begin
+    username := AConnection.Params.UserName;
 
-  if passwords = nil then
-    passwords := TStringList.Create;
+    if passwords = nil then
+      passwords := TStringList.Create;
 
-  if username <> '' then
-    password := passwords.Values[username];
+    if username <> '' then
+      password := passwords.Values[username];
 
-  if password = '' then
-  begin
-    frmLogin.edUserName.Text := username;
-    frmLogin.edPassword.Text := password;
-    if frmLogin.ShowModal = idOK then
+    if password = '' then
     begin
-      userName := frmLogin.edUserName.Text;
-      password := frmLogin.edPassword.Text;
-    end
-    else
-    begin
-      userName := '';
-      password := '';
+      frmLogin.edUserName.Text := username;
+      frmLogin.edPassword.Text := password;
+      if frmLogin.ShowModal = idOK then
+      begin
+        userName := frmLogin.edUserName.Text;
+        password := frmLogin.edPassword.Text;
+      end
+      else
+      begin
+        userName := '';
+        password := '';
+      end;
     end;
-  end;
 
-  AConnection.Params.UserName := username;
-  AConnection.Params.Password := password;
+    AConnection.Params.UserName := username;
+    AConnection.Params.Password := password;
 
-  passwords.Values[userName] := password;
+    passwords.Values[userName] := password;
+  end);
 end;
 
 function TfrmInspector.GetCatalogName: string;

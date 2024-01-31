@@ -26,7 +26,6 @@ object Form1: TForm1
     ScrollPerRow = False
     DefaultExpandRows = False
     HighlightRows = True
-    AddingNew = FMXTreeControl1AddingNew
     LayoutColumnsComplete = FMXTreeControl1LayoutColumnsComplete
     Viewport.Width = 556.000000000000000000
     Viewport.Height = 379.000000000000000000
@@ -88,6 +87,17 @@ object Form1: TForm1
       TextSettings.Trimming = None
       OnClick = TDatasetClick
     end
+    object Button9: TButton
+      Position.X = 329.000000000000000000
+      Position.Y = 41.000000000000000000
+      Size.Width = 208.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Text = 'IDataModel -> IModel<ICompany>'
+      TextSettings.Trimming = None
+      OnClick = Button9Click
+    end
   end
   object Layout2: TLayout
     Align = Right
@@ -147,7 +157,7 @@ object Form1: TForm1
       Position.X = 96.000000000000000000
       Position.Y = 176.000000000000000000
       TabOrder = 4
-      Text = 'Model.Insert'
+      Text = 'Insert'
       TextSettings.Trimming = None
       OnClick = Button6Click
       object Button7: TButton

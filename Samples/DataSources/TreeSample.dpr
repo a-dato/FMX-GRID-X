@@ -3,7 +3,8 @@ program TreeSample;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  TreeSampleMain in 'TreeSampleMain.pas' {Form1};
+  TreeSampleMain in 'TreeSampleMain.pas' {Form1},
+  ADato.ObjectModel.DataModel.impl in '..\..\adato_datamodel\ObjectModel\ADato.ObjectModel.DataModel.impl.pas';
 
 {$R *.res}
 
