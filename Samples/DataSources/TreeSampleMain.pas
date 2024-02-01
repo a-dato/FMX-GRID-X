@@ -19,7 +19,8 @@ uses
   FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
   FireDAC.Phys.MSSQL, FireDAC.Phys.MSSQLDef, FireDAC.FMXUI.Wait, FireDAC.DApt,
   FMX.Grid.Style, Fmx.Bind.Grid, Data.Bind.Grid, FMX.ScrollBox, FMX.Grid,
-  ADato.Controls.FMX.Tree.Intf, System.ComponentModel;
+  ADato.Controls.FMX.Tree.Intf, System.ComponentModel, ADato.ObjectModel.intf,
+  ADato.ObjectModel.List.intf;
 
 type
   {$M+}
@@ -53,6 +54,7 @@ type
     Button6: TButton;
     Button7: TButton;
     Button8: TButton;
+    Button9: TButton;
     procedure acCollapseExecute(Sender: TObject);
     procedure acExpandExecute(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -61,21 +63,34 @@ type
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
-    procedure FMXTreeControl1AddingNew(Sender: TObject; Args: AddingNewEventArgs);
+    procedure Button9Click(Sender: TObject);
     procedure TDatasetClick(Sender: TObject);
     procedure FMXTreeControl1LayoutColumnsComplete(Sender: TObject; e: EventArgs);
     procedure Timer1Timer(Sender: TObject);
   private
     function CreateCompanyList: List<ICompany>;
+    function CreateCompanyDataModel: IDataModel;
   protected
     procedure SetupMemTable;
+
+    procedure TreeControlAddingNew(Sender: TObject; Args: AddingNewEventArgs);
+
   public
-    dm: IDataModel;
+    _objectListModel: IObjectListModel;
+    _companyDataModel: IDataModel;
     { Public declarations }
   end;
 
   ICompany = interface(IBaseInterface)
     ['{21E9FA90-85E1-4173-9DCB-019A489AFB18}']
+    function  get_Name: string;
+    procedure set_Name(const Value: string);
+
+    property Name: string read get_Name write set_Name;
+  end;
+
+  IUser = interface(IBaseInterface)
+    ['{1F6A00FA-4269-42D4-9FC2-E25C9330386F}']
     function  get_Name: string;
     procedure set_Name(const Value: string);
 
@@ -94,19 +109,29 @@ type
     property Name: string read get_Name write set_Name;
   end;
 
+  TUser = class(TBaseInterfacedObject, IUser)
+  private
+    _Name: string;
+
+    function  get_Name: string;
+    procedure set_Name(const Value: string);
+  public
+    function ToString: CString; override;
+  published
+    property Name: string read get_Name write set_Name;
+  end;
+
 var
   Form1: TForm1;
 
 implementation
 
 uses
-  ADato.ObjectModel.intf,
-  ADato.ObjectModel.List.intf,
   ADato.ObjectModel.List.Tracking.intf,
   ADato.ObjectModel.List.Tracking.impl, System.Collections,
   ADato.ObjectModel.Binders,
   ADato.Data.DataModel.impl, ADato.InsertPosition, ADato.ObjectModel.List.impl,
-  System.TypInfo;
+  System.TypInfo, ADato.ObjectModel.DataModel.impl;
 
 {$R *.fmx}
 
@@ -122,6 +147,7 @@ end;
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
+  FMXTreeControl1.AddingNew := nil;
   FMXTreeControl1.Data := CreateCompanyList;
 end;
 
@@ -133,39 +159,28 @@ begin
   var bind := TPropertyBinding.CreateBindingByControl(edNameByBinding);
   model.ObjectModelContext.Bind('Name', bind);
 
+  FMXTreeControl1.AddingNew := nil;
   FMXTreeControl1.Model := model;
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  dm := TDataModel.Create;
+  _companyDataModel := CreateCompanyDataModel;
+  FMXTreeControl1.AddingNew := TreeControlAddingNew;
+  FMXTreeControl1.DataModelView := _companyDataModel.DefaultView;
 
-  var c: IDataModelColumn := DataModelColumn.Create;
-  c.DataType := Global.GetTypeOf<string>;
-  c.Name := 'Name';
-  dm.Columns.Add(c);
-
-  for var cm in CreateCompanyList do
-  begin
-    dm.Add(cm, nil, InsertPosition.After);
-
-    for var i := 0 to 9 do
-    begin
-      var u: ICompany := TCompany.Create;
-      u.Name := 'User ' + i.ToString;
-
-      dm.Add(u, cm, InsertPosition.Child);
-    end;
-  end;
-
-  FMXTreeControl1.DataModelView := dm.DefaultView;
+  _objectListModel := TDataModelObjectListModel.Create(_companyDataModel);
 end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-  if FMXTreeControl1.Model <> nil then
-    (FMXTreeControl1.Model as IEditableModel).AddNew(FMXTreeControl1.Current, InsertPosition.Before) else
-    FMXTreeControl1.InsertRow(InsertPosition.Before);
+//  if FMXTreeControl1.Model <> nil then
+//    (FMXTreeControl1.Model as IEditableModel).AddNew(FMXTreeControl1.Current, InsertPosition.Before) else
+//    FMXTreeControl1.InsertRow(InsertPosition.Before);
+
+  var c: ICompany := TCompany.Create;
+  c.Name := 'New item';
+  _companyDataModel.Add(c, nil, InsertPosition.Before);
 end;
 
 procedure TForm1.Button7Click(Sender: TObject);
@@ -192,7 +207,44 @@ begin
   var bind := TPropertyBinding.CreateBindingByControl(edNameByBinding);
   model.ObjectModelContext.Bind('Name', bind);
 
+  FMXTreeControl1.AddingNew := nil;
   FMXTreeControl1.Model := model;
+end;
+
+procedure TForm1.Button9Click(Sender: TObject);
+begin
+  var model: IObjectListModel := TObjectListModelWithChangeTracking<ICompany>.Create(function: ICompany begin Result := TCompany.Create; end);
+
+  _companyDataModel := CreateCompanyDataModel;
+  model.Context := _companyDataModel as IList;
+
+  var bind := TPropertyBinding.CreateBindingByControl(edNameByBinding);
+  model.ObjectModelContext.Bind('Name', bind);
+
+  FMXTreeControl1.Model := model;
+end;
+
+function TForm1.CreateCompanyDataModel: IDataModel;
+begin
+  Result := TDataModel.Create;
+
+  var c: IDataModelColumn := DataModelColumn.Create;
+  c.DataType := Global.GetTypeOf<string>;
+  c.Name := 'Name';
+  Result.Columns.Add(c);
+
+  for var cm in CreateCompanyList do
+  begin
+    Result.Add(cm, nil, InsertPosition.After);
+
+    for var i := 0 to 9 do
+    begin
+      var u: IUser := TUser.Create;
+      u.Name := 'User ' + i.ToString;
+
+      Result.Add(u, cm, InsertPosition.Child);
+    end;
+  end;
 end;
 
 function TForm1.CreateCompanyList: List<ICompany>;
@@ -207,10 +259,18 @@ begin
   end;
 end;
 
-procedure TForm1.FMXTreeControl1AddingNew(Sender: TObject; Args: AddingNewEventArgs);
+procedure TForm1.TreeControlAddingNew(Sender: TObject; Args: AddingNewEventArgs);
 begin
-  var c: ICompany := TCompany.Create;
-  Args.NewObject := c;
+  if (FMXTreeControl1.Row = nil) or (FMXTreeControl1.Row.Level = 0) then
+  begin
+    var c: ICompany := TCompany.Create;
+    Args.NewObject := c;
+  end
+  else
+  begin
+    var u: IUser := TUser.Create;
+    Args.NewObject := u;
+  end;
 end;
 
 procedure TForm1.TDatasetClick(Sender: TObject);
@@ -231,6 +291,8 @@ begin
   FDMemTable1.EnableControls;
 
   DatasetDataModel1.Open;
+
+  FMXTreeControl1.AddingNew := nil;
   FMXTreeControl1.DataModelView := DatasetDataModel1.DataModelView;
 end;
 
@@ -270,6 +332,23 @@ begin
 end;
 
 function TCompany.ToString: CString;
+begin
+  Result := _Name;
+end;
+
+{ TUser }
+
+function TUser.get_Name: string;
+begin
+  Result := _Name;
+end;
+
+procedure TUser.set_Name(const Value: string);
+begin
+  _Name := Value;
+end;
+
+function TUser.ToString: CString;
 begin
   Result := _Name;
 end;
