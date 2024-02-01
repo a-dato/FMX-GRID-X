@@ -59,7 +59,6 @@ contains
   ADato.ObjectModel.List.Tracking.intf in '..\ObjectModel\ADato.ObjectModel.List.Tracking.intf.pas',
   ADato.ObjectModel.impl in '..\ObjectModel\ADato.ObjectModel.impl.pas',
   ADato.ObjectModel.intf in '..\ObjectModel\ADato.ObjectModel.intf.pas',
-  ADato.ObjectModel.List.ContextStorage.impl in '..\ObjectModel\ADato.ObjectModel.List.ContextStorage.impl.pas',
   ADato.ObjectModel.List.DataModel.impl in '..\ObjectModel\ADato.ObjectModel.List.DataModel.impl.pas',
   ADato.InsertPosition in '..\DataModel\ADato.InsertPosition.pas',
   ADato.Models.ContextUpdater.impl in '..\ObjectModel\ADato.Models.ContextUpdater.impl.pas',

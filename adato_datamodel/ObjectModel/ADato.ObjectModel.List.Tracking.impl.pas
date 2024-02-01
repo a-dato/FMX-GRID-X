@@ -7,14 +7,16 @@ uses
   {$IFDEF DELPHI}
   System.SysUtils,
   {$ENDIF}
-  System_, 
+  System_,
+  System.Collections,
   System.Collections.Generic,
   System.ComponentModel,
+
+  ADato.ObjectModel.impl,
   ADato.ObjectModel.intf,
+  ADato.ObjectModel.List.impl,
   ADato.ObjectModel.List.intf,
   ADato.ObjectModel.List.Tracking.intf,
-  ADato.ObjectModel.impl, System.Collections,
-  ADato.ObjectModel.List.ContextStorage.impl,
   ADato.InsertPosition,
   ADato.Models.ContextUpdater.intf;
 
@@ -26,7 +28,7 @@ type
   end;
 
   TObjectListModelWithChangeTracking<T> = {$IFDEF DOTNET}public{$ENDIF} class(
-    TObjectListModelContextStorage<T>,
+    TObjectListModel<T>,
     IObjectListModelChangeTracking,
     IAddingNew,
     IEditState,
@@ -34,6 +36,8 @@ type
 
   protected
     _CreatorFunc  : TFunc<T>;
+    _DoMultiContextSupport: Boolean;
+
     _ChangedItems : Dictionary<CObject, TObjectListChangeType>;   // List
     _orignalContext: IList;
     _EditContext  : IObjectModelContext;
@@ -47,7 +51,6 @@ type
     procedure EndUpdate;
     function  CreateObjectModelContext : IObjectModelContext; override;
     procedure UpdateEditContext(const Context: IObjectModelContext; Cancel: Boolean = False);
-    procedure UpdateStoredContext;
 
     procedure NotifyAddingNew(const Context: IObjectModelContext; var Index: Integer; Position: InsertPosition);
 //    procedure NotifyAdded(const Item: CObject; const Index: Integer);
@@ -93,13 +96,13 @@ type
     // IAddNewSupport
     function CreateInstance: CObject;
   public
-    constructor Create; overload; override;
+    constructor Create; reintroduce; overload;
 
     // Duplicate of Create(const ContextUpdater: IObjectModelContextUpdater; const CreatorFunc: TFunc<T> = nil); overload;
     // constructor Create(const ContextUpdater: IObjectModelContextUpdater); overload;
 
-    constructor Create(const CreatorFunc: TFunc<T> = nil); overload;
-    constructor Create(const ContextUpdater: IObjectModelContextUpdater; const CreatorFunc: TFunc<T> = nil); overload;
+    constructor Create(DoMultiContextSupport: Boolean; const CreatorFunc: TFunc<T> = nil); overload;
+    constructor Create(const ContextUpdater: IObjectModelContextUpdater; DoMultiContextSupport: Boolean; const CreatorFunc: TFunc<T> = nil); overload;
 
     {$IFDEF DEBUG_XX}
     destructor Destroy; override;
@@ -153,7 +156,8 @@ uses
   System.TypInfo,
   {$ENDIF}
   ADato.Data.DataModel.intf,
-  ADato.TraceEvents.intf;
+  ADato.TraceEvents.intf,
+  ADato.MultiObjectModelContextSupport.impl;
 
 { TObjectListModel<T> }
 
@@ -222,16 +226,17 @@ begin
   {$ENDIF}
 end;
 
-constructor TObjectListModelWithChangeTracking<T>.Create(const CreatorFunc: TFunc<T>);
+constructor TObjectListModelWithChangeTracking<T>.Create(DoMultiContextSupport: Boolean; const CreatorFunc: TFunc<T>);
 begin
   Create;
 
   _CreatorFunc := CreatorFunc;
+  _DoMultiContextSupport := DoMultiContextSupport;
 end;
 
-constructor TObjectListModelWithChangeTracking<T>.Create(const ContextUpdater: IObjectModelContextUpdater; const CreatorFunc: TFunc<T>);
+constructor TObjectListModelWithChangeTracking<T>.Create(const ContextUpdater: IObjectModelContextUpdater; DoMultiContextSupport: Boolean; const CreatorFunc: TFunc<T>);
 begin
-  Create;
+  Create(DoMultiContextSupport, CreatorFunc);
 
   if ContextUpdater = nil then
     raise ArgumentNullException.Create('ContextUpdater');
@@ -253,7 +258,11 @@ end;
 function TObjectListModelWithChangeTracking<T>.CreateObjectModelContext : IObjectModelContext;
 begin
   if ListHoldsObjectType then
-    Result := TEditableObjectModelContext.Create(get_ObjectModel, Self) else
+  begin
+    if _DoMultiContextSupport then
+      Result := TMultiEditableObjectModelContext.Create(get_ObjectModel, Self) else
+      Result := TEditableObjectModelContext.Create(get_ObjectModel, Self);
+  end else
     Result := inherited;
 end;
 
@@ -350,7 +359,6 @@ end;
 procedure TObjectListModelWithChangeTracking<T>.NotifyBeginEdit(const Context: IObjectModelContext);
 begin
   UpdateEditContext(Context);
-  UpdateStoredContext;
 
   var dm: IDataModel;
   if interfaces.Supports<IDatamodel>(Self._Context, dm) then
@@ -391,8 +399,6 @@ begin
 
     _Context[i] := OriginalObject;
   end;
-
-  UpdateStoredContext;
 
   if _OnItemChanged <> nil then
   begin
@@ -477,21 +483,6 @@ begin
     if _ChangedItems.TryGetValue(Obj, ct) and (ct = TObjectListChangeType.Added) then
       _ChangedItems.Remove(Obj) else
       _ChangedItems[Obj] := TObjectListChangeType.Removed;
-  end;
-end;
-
-procedure TObjectListModelWithChangeTracking<T>.UpdateStoredContext;
-var
-  ctxt: IObjectModelContext;
-begin
-  if not get_StoredContexts.TryGetValue(get_ObjectContext, ctxt) then
-    Exit;
-
-  (ctxt as IUpdatableObject).BeginUpdate;
-  try
-    ctxt.Context := get_ObjectContext; // overwrite with clone / original object
-  finally
-    (ctxt as IUpdatableObject).EndUpdate;
   end;
 end;
 

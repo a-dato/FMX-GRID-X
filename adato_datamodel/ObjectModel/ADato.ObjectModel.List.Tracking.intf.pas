@@ -7,7 +7,8 @@ uses
   System_,
   ADato.ObjectModel.List.intf,
   System.Collections.Generic,
-  ADato.ObjectModel.intf, ADato.InsertPosition;
+  ADato.ObjectModel.intf,
+  ADato.InsertPosition;
 
 type
   TObjectListChangeType = (Changed, Added, Removed);
@@ -95,7 +96,7 @@ type
     procedure EndEdit(const Item: CObject);
   end;
 
-  IObjectListModelChangeTracking = interface(IObjectListModelContextStorage)
+  IObjectListModelChangeTracking = interface(IObjectListModel)
     ['{909AA97F-A9C7-4578-ACC9-D345BB6D48E9}']
     {$IFDEF DELPHI}
     function  get_OnAskForApply: AskForApplyEventHandler;

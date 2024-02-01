@@ -26,7 +26,9 @@ type
     _OnContextChanged: ListContextChangedEventHandler;
     _Context: IList;
     _ObjectModel: IObjectModel;
+
     _ObjectModelContext: IObjectModelContext;
+//    _ObjectModelContextSupport: IObjectModelContextSupport;
     _MultiSelectionContext: List<CObject>;
 
     function  CreateObjectModel : IObjectModel; virtual;
@@ -49,8 +51,10 @@ type
     function  get_OnContextChanged: ListContextChangedEventHandler;
     function  get_ObjectModel: IObjectModel;
     procedure set_ObjectModel(const Value: IObjectModel);
+
+//    function  get_ObjectModelContextSupport: IObjectModelContextSupport;
     function  get_ObjectModelContext: IObjectModelContext;
-    procedure set_ObjectModelContext(const Value: IObjectModelContext);
+//    procedure set_ObjectModelContext(const Value: IObjectModelContext);
     function  get_MultiSelectionContext: List<CObject>;
     procedure set_MultiSelectionContext(const Value: List<CObject>);
 
@@ -60,6 +64,17 @@ type
 
   public
     constructor Create;
+  end;
+
+  TSingleObjectContextSupport = class(TBaseInterfacedObject, IObjectModelContextSupport)
+  private
+    _objectModelContext: IObjectModelContext;
+
+    function  get_ObjectModelContext: IObjectModelContext;
+    procedure set_ObjectModelContext(const Value: IObjectModelContext);
+
+  public
+    property ObjectModelContext: IObjectModelContext read get_ObjectModelContext write set_ObjectModelContext;
   end;
 
 implementation
@@ -173,6 +188,14 @@ begin
   _ObjectModel := Value;
 end;
 
+//function TObjectListModel<T>.get_ObjectModelContextSupport: IObjectModelContextSupport;
+//begin
+//  if _ObjectModelContextSupport = nil then
+//    _ObjectModelContextSupport := TSingleObjectContextSupport.Create;
+//
+//  Result := _ObjectModelContextSupport;
+//end;
+
 function TObjectListModel<T>.get_ObjectModelContext: IObjectModelContext;
 begin
   if _ObjectModelContext = nil then
@@ -181,10 +204,10 @@ begin
   Result := _ObjectModelContext;
 end;
 
-procedure TObjectListModel<T>.set_ObjectModelContext(const Value: IObjectModelContext);
-begin
-  _ObjectModelContext := Value;
-end;
+//procedure TObjectListModel<T>.set_ObjectModelContext(const Value: IObjectModelContext);
+//begin
+//  _ObjectModelContextSupport.ObjectModelContext := Value;
+//end;
 
 function TObjectListModel<T>.get_MultiSelectionContext: List<CObject>;
 begin
@@ -202,5 +225,17 @@ begin
   Result := _ObjectType;
 end;
 {$ENDIF}
+
+{ TSingleObjectContextSupport }
+
+function TSingleObjectContextSupport.get_ObjectModelContext: IObjectModelContext;
+begin
+  Result := _objectModelContext;
+end;
+
+procedure TSingleObjectContextSupport.set_ObjectModelContext(const Value: IObjectModelContext);
+begin
+  _objectModelContext := Value;
+end;
 
 end.
