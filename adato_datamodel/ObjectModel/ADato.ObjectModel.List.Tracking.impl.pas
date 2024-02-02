@@ -32,7 +32,9 @@ type
     IObjectListModelChangeTracking,
     IAddingNew,
     IEditState,
-    IEditableModel)
+    IEditableModel,
+    INotifyListItemChanged,
+    IOnItemChangedSupport)
 
   protected
     _CreatorFunc  : TFunc<T>;
@@ -52,6 +54,7 @@ type
     function  CreateObjectModelContext : IObjectModelContext; override;
     procedure UpdateEditContext(const Context: IObjectModelContext; Cancel: Boolean = False);
 
+    // INotifyListItemChanged
     procedure NotifyAddingNew(const Context: IObjectModelContext; var Index: Integer; Position: InsertPosition);
 //    procedure NotifyAdded(const Item: CObject; const Index: Integer);
     procedure NotifyRemoved(const Item: CObject; const Index: Integer);
@@ -83,6 +86,8 @@ type
     // IObjectListModelChangeTracking
     function  get_HasChangedItems: Boolean;
     function  get_ChangedItems: Dictionary<CObject, TObjectListChangeType>;
+
+    // IOnItemChangedSupport
     function  get_OnItemChanged: IList<IListItemChanged>;
 
     function  RetrieveUpdatedItems: Dictionary<CObject, TObjectListChangeType>;
@@ -115,37 +120,6 @@ type
     {$ELSE}
     event OnAskForApply: AskForApplyEventHandler;
     {$ENDIF}
-  end;
-
-  TEditableObjectModelContext = class(TObjectModelContext, IEditableListObject, IEditState)
-  {$IFDEF DELPHI}protected{$ELSE}public{$ENDIF}
-    _IsChanged: Boolean;
-    _IsNew: Boolean;
-    _Index: Integer;
-    _Position: InsertPosition;
-    _SavedContext: CObject;
-    [weak]Owner: IObjectListModelChangeTracking;
-
-    function  get_IsChanged: Boolean;
-    function  get_IsEdit: Boolean;
-    function  get_IsNew: Boolean;
-    function  get_IsEditOrNew: Boolean;
-
-    procedure AddNew(const item: CObject; Index: Integer; Position: InsertPosition);
-    procedure BeginEdit(Index: Integer);
-    procedure CancelEdit;
-    procedure EndEdit;
-    procedure StartChange;
-
-    function  DoContextChanging: Boolean; override;
-    procedure UpdatePropertyBindingValues; override;
-    procedure UpdatePropertyBindingValues(const APropertyName: CString); override;
-    procedure UpdateValueFromBoundProperty(const ABinding: IPropertyBinding; const Value: CObject; ExecuteTriggers: Boolean); override;
-    procedure UpdateValueFromBoundProperty(const APropertyName: CString; const Value: CObject; ExecuteTriggers: Boolean); override;
-
-  public
-    constructor Create(const AModel: IObjectModel; const AOwner: IObjectListModelChangeTracking); reintroduce; overload;
-//    constructor Create(const Other: IObjectModelContext; const AOwner: IObjectListModelChangeTracking); overload;
   end;
 
 implementation
@@ -589,167 +563,6 @@ begin
   _storeChangedItems := Value;
   if not Value then
     _ChangedItems.Clear;
-end;
-
-{ TEditableObjectModelContext }
-constructor TEditableObjectModelContext.Create(const AModel: IObjectModel; const AOwner: IObjectListModelChangeTracking);
-begin
-  inherited Create(AModel);
-  Owner := AOwner;
-end;
-
-procedure TEditableObjectModelContext.AddNew(const Item: CObject; Index: Integer; Position: InsertPosition);
-begin
-  // Added by JvA 25-11-2021
-  if get_IsEditOrNew then
-    EndEdit;
-
-  _IsChanged := False;
-  _IsNew := True;
-  _Index := Index;
-
-  inherited set_Context(item);
-
-  if Owner <> nil then
-    Owner.NotifyAddingNew(Self, {var} _Index, Position);
-
-  var cln: ICloneable;
-  if _Context.TryGetValue<ICloneable>(cln) then
-    _SavedContext := cln.Clone else
-    _SavedContext := Item;
-end;
-
-procedure TEditableObjectModelContext.BeginEdit(Index: Integer);
-var
-  eo: IEditableObject;
-  cln: ICloneable;
-begin
-//  Assert((Self as IObjectModelContext) = Owner.ObjectModelContext);
-
-  _IsChanged := False;
-  _IsNew := False;
-  _Index := Index;
-
-  _SavedContext := _Context;
-
-  if _Context.TryGetValue<ICloneable>(cln) then
-  begin
-    BeginUpdate;
-    try
-      inherited set_Context(cln.Clone);
-    finally
-      EndUpdate;
-    end;
-  end;
-
-  if _Context.TryGetValue<IEditableObject>(eo) then
-    eo.BeginEdit;
-
-  if Owner <> nil then
-    Owner.NotifyBeginEdit(Self);
-end;
-
-procedure TEditableObjectModelContext.CancelEdit;
-var
-  eo: IEditableObject;
-begin
-  if get_IsEditOrNew then
-  begin
-    if _Context.TryGetValue<IEditableObject>(eo) then
-      eo.CancelEdit;
-
-    if (Owner <> nil) and (_UpdateCount = 0) then
-      Owner.NotifyCancelEdit(Self, _SavedContext);
-
-    // in case of clone, set old item back
-    BeginUpdate;
-    try
-      inherited set_Context(_SavedContext);
-    finally
-      EndUpdate;
-    end;
-
-    _SavedContext := nil;
-    _IsChanged := False;
-  end;
-end;
-
-procedure TEditableObjectModelContext.EndEdit;
-var
-  eo: IEditableObject;
-begin
-  if get_IsEditOrNew then
-  begin
-    if _Context.TryGetValue<IEditableObject>(eo) then
-      eo.EndEdit;
-
-    if (Owner <> nil) and (_UpdateCount = 0) then
-      Owner.NotifyEndEdit(Self, _SavedContext, _Index, _Position);
-
-    _SavedContext := nil;
-    _IsChanged := False;
-  end;
-end;
-
-function TEditableObjectModelContext.get_IsChanged: Boolean;
-begin
-  Result := _IsChanged;
-end;
-
-function TEditableObjectModelContext.get_IsEdit: Boolean;
-begin
-  Result := (_savedContext <> nil) and not _IsNew;
-end;
-
-function TEditableObjectModelContext.get_IsNew: Boolean;
-begin
-  Result := (_savedContext <> nil) and _IsNew;
-end;
-
-function TEditableObjectModelContext.get_IsEditOrNew: Boolean;
-begin
-  Result := _savedContext <> nil;
-end;
-
-function TEditableObjectModelContext.DoContextChanging : Boolean;
-begin
-  Result := inherited;
-  if Result and (_UpdateCount = 0) then
-    EndEdit;
-end;
-
-procedure TEditableObjectModelContext.UpdatePropertyBindingValues;
-begin
-  // do not execute by creating a clone in BeginEdit
-  if (_updateCount = 0) or _IsChanged then
-    inherited;
-end;
-
-procedure TEditableObjectModelContext.UpdatePropertyBindingValues(const APropertyName: CString);
-begin
-  // do not execute by creating a clone in BeginEdit
-  if (_updateCount = 0) or _IsChanged then
-    inherited;
-end;
-
-procedure TEditableObjectModelContext.UpdateValueFromBoundProperty(const ABinding: IPropertyBinding; const Value: CObject; ExecuteTriggers: Boolean);
-begin
-  StartChange;
-  inherited;
-end;
-
-procedure TEditableObjectModelContext.UpdateValueFromBoundProperty(const APropertyName: CString; const Value: CObject; ExecuteTriggers: Boolean);
-begin
-  StartChange;
-  inherited;
-end;
-
-procedure TEditableObjectModelContext.StartChange;
-begin
-  if not get_IsEditOrNew then
-    BeginEdit(-1);
-
-  _IsChanged := True;
 end;
 
 end.

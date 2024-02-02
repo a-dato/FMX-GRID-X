@@ -4820,7 +4820,7 @@ end;
 
 function TCustomTreeControl.DeleteRow: Boolean;
 begin
-  Result := InternalRemoveRow(True);
+  Result := InternalRemoveRow(_model <> nil);
   if _listComparer <> nil then
     _listComparer.ResetSortedRows(False);
 end;
@@ -5974,8 +5974,8 @@ begin
       _model.ObjectModelContext.OnContextChanged.Remove(ObjectModelContextChanged);
     end;
 
-    var ct: IObjectListModelChangeTracking;
-    if (_modelListItemChanged <> nil) and Interfaces.Supports<IObjectListModelChangeTracking>(_model, ct) then
+    var ct: IOnItemChangedSupport;
+    if (_modelListItemChanged <> nil) and Interfaces.Supports<IOnItemChangedSupport>(_model, ct) then
       ct.OnItemChanged.Remove(_modelListItemChanged);
   end;
 
@@ -5992,8 +5992,8 @@ begin
       _model.ObjectModelContext.OnContextChanged.Add(ObjectModelContextChanged);
     end;
 
-    var ct: IObjectListModelChangeTracking;
-    if Interfaces.Supports<IObjectListModelChangeTracking>(_model, ct) then
+    var ct: IOnItemChangedSupport;
+    if Interfaces.Supports<IOnItemChangedSupport>(_model, ct) then
     begin
       if _modelListItemChanged = nil then
         _modelListItemChanged := TObjectListModelItemChangedDelegate.Create(Self);

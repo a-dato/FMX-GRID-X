@@ -121,7 +121,7 @@ type
     FContainedProperty: _PropertyInfo;
     FBindings: List<IPropertyBinding>;
 
-    function  get_ContainedProperty: _PropertyInfo;
+    function  get_ContainedProperty: _PropertyInfo; virtual;
     function  get_Bindings: List<IPropertyBinding>;
 
     function  get_CanRead: Boolean; {$IFDEF DOTNET} override;  {$ENDIF}
@@ -132,6 +132,8 @@ type
     function  get_OwnerType: &Type;
     function  get_PropInfo: IPropInfo;
     {$ENDIF}
+
+    function  GetObjectProperty(const obj: CObject): _PropertyInfo; virtual;
 
     procedure AddBinding(const ABinding: IPropertyBinding);
     procedure RemoveBinding(const ABinding: IPropertyBinding);
@@ -146,8 +148,8 @@ type
     {$IFDEF DELPHI}
     function  GetAttributes: TArray<TCustomAttribute>;
     {$ENDIF}
-    function  GetValue(const obj: CObject; const index: array of CObject): CObject; {$IFDEF DOTNET} override;  {$ENDIF}
-    procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false); {$IFDEF DOTNET} override;  {$ENDIF}
+    function  GetValue(const obj: CObject; const index: array of CObject): CObject; {$IFDEF DOTNET} override;  {$ELSE} virtual; {$ENDIF}
+    procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false); {$IFDEF DOTNET} override; {$ELSE} virtual; {$ENDIF}
 
     property CanRead: Boolean read get_CanRead;
     property CanWrite: Boolean read get_CanWrite;
@@ -274,8 +276,9 @@ procedure TObjectModelContext.PropertyNotifyBindings(const AProperty: IObjectMod
 begin
   var value: CObject;
   if _Context <> nil then
-    value := AProperty.ContainedProperty.GetValue(_Context, []) else
+    value := AProperty.GetValue(_Context, []) else
     value := nil;
+
   AProperty.NotifyBindings(_Context, value, False);
 end;
 
@@ -673,7 +676,7 @@ end;
 
 function TObjectModelPropertyWrapper.GetValue(const obj: CObject; const index: array of CObject): CObject;
 begin
-  Result := FContainedProperty.GetValue(obj, index);
+  Result := GetObjectProperty(obj).GetValue(obj, index);
 end;
 
 function TObjectModelPropertyWrapper.get_CanRead: Boolean;
@@ -696,9 +699,14 @@ begin
   Result := FContainedProperty;
 end;
 
+function TObjectModelPropertyWrapper.GetObjectProperty(const obj: CObject): _PropertyInfo;
+begin
+  Result := get_ContainedProperty;
+end;
+
 function TObjectModelPropertyWrapper.get_Name: CString;
 begin
-  Result := FContainedProperty.get_Name;
+  Result := get_ContainedProperty.get_Name;
 end;
 
 {$IFDEF DELPHI}
@@ -716,9 +724,9 @@ end;
 procedure TObjectModelPropertyWrapper.SetValue(const Obj, Value: CObject; const Index: array of CObject; ExecuteTriggers: Boolean);
 begin
   {$IFDEF DELPHI}
-  FContainedProperty.SetValue(Obj, Value, Index, ExecuteTriggers);
+  GetObjectProperty(obj).SetValue(Obj, Value, Index, ExecuteTriggers);
   {$ELSE}
-  FContainedProperty.SetValue(Obj, Value, Index);
+  GetObjectProperty(obj).SetValue(Obj, Value, Index);
   {$ENDIF}
 
   NotifyBindings(Obj, Value, True);

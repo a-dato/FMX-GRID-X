@@ -96,6 +96,21 @@ type
     procedure EndEdit(const Item: CObject);
   end;
 
+  INotifyListItemChanged = interface(IBaseInterface)
+    ['{FE713187-9C8E-45AF-BC0B-DE0E7AC67A13}']
+    procedure NotifyAddingNew(const Context: IObjectModelContext; var Index: Integer; Position: InsertPosition);
+    procedure NotifyCancelEdit(const Context: IObjectModelContext; const OriginalObject: CObject);
+    procedure NotifyBeginEdit(const Context: IObjectModelContext);
+    procedure NotifyEndEdit(const Context: IObjectModelContext; const OriginalObject: CObject; Index: Integer; Position: InsertPosition);
+    procedure NotifyRemoved(const Item: CObject; const Index: Integer);
+  end;
+
+  IOnItemChangedSupport = interface(IBaseInterface)
+    ['{43123070-3EDD-4836-A7EB-A286C8DB6503}']
+    function  get_OnItemChanged: IList<IListItemChanged>;
+    property OnItemChanged: IList<IListItemChanged> read get_OnItemChanged;
+  end;
+
   IObjectListModelChangeTracking = interface(IObjectListModel)
     ['{909AA97F-A9C7-4578-ACC9-D345BB6D48E9}']
     {$IFDEF DELPHI}
@@ -103,20 +118,12 @@ type
     {$ENDIF}
     function  get_HasChangedItems: Boolean;
     function  get_ChangedItems: Dictionary<CObject, TObjectListChangeType>;
-    function  get_OnItemChanged: IList<IListItemChanged>;
     procedure set_StoreChangedItems(const Value: Boolean);
-
-    procedure NotifyAddingNew(const Context: IObjectModelContext; var Index: Integer; Position: InsertPosition);
-    procedure NotifyCancelEdit(const Context: IObjectModelContext; const OriginalObject: CObject);
-    procedure NotifyBeginEdit(const Context: IObjectModelContext);
-    procedure NotifyEndEdit(const Context: IObjectModelContext; const OriginalObject: CObject; Index: Integer; Position: InsertPosition);
-    procedure NotifyRemoved(const Item: CObject; const Index: Integer);
 
     function RetrieveUpdatedItems: Dictionary<CObject, TObjectListChangeType>;
 
     property HasChangedItems: Boolean read get_HasChangedItems;
     property ChangedItems: Dictionary<CObject, TObjectListChangeType> read get_ChangedItems;
-    property OnItemChanged: IList<IListItemChanged> read get_OnItemChanged;
     property StoreChangedItems: Boolean write set_StoreChangedItems;
 
     {$IFDEF DELPHI}

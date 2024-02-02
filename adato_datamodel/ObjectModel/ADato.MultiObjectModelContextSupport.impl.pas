@@ -14,9 +14,41 @@ uses
   ADato.MultiObjectModelContextSupport.intf,
   ADato.Models.VirtualListItemDelegate,
   ADato.ObjectModel.List.Tracking.intf,
-  ADato.ObjectModel.List.Tracking.impl;
+  ADato.ObjectModel.List.Tracking.impl, 
+  ADato.InsertPosition;
 
 type
+  TEditableObjectModelContext = class(TObjectModelContext, IEditableListObject, IEditState)
+  {$IFDEF DELPHI}protected{$ELSE}public{$ENDIF}
+    _IsChanged: Boolean;
+    _IsNew: Boolean;
+    _Index: Integer;
+    _Position: InsertPosition;
+    _SavedContext: CObject;
+    [weak]_Owner: IObjectListModel;
+
+    function  get_IsChanged: Boolean;
+    function  get_IsEdit: Boolean;
+    function  get_IsNew: Boolean;
+    function  get_IsEditOrNew: Boolean;
+
+    procedure AddNew(const item: CObject; Index: Integer; Position: InsertPosition);
+    procedure BeginEdit(Index: Integer);
+    procedure CancelEdit;
+    procedure EndEdit;
+    procedure StartChange;
+
+    function  DoContextChanging: Boolean; override;
+    procedure UpdatePropertyBindingValues; override;
+    procedure UpdatePropertyBindingValues(const APropertyName: CString); override;
+    procedure UpdateValueFromBoundProperty(const ABinding: IPropertyBinding; const Value: CObject; ExecuteTriggers: Boolean); override;
+    procedure UpdateValueFromBoundProperty(const APropertyName: CString; const Value: CObject; ExecuteTriggers: Boolean); override;
+
+  public
+    constructor Create(const AModel: IObjectModel; const AOwner: IObjectListModel); reintroduce; overload;
+//    constructor Create(const Other: IObjectModelContext; const AOwner: IObjectListModelChangeTracking); overload;
+  end;
+
   TMultiEditableObjectModelContext = class(TEditableObjectModelContext, IMultiObjectContextSupport)
   protected
     _contexts: Dictionary<CObject, IObjectModelContext>;
@@ -26,7 +58,7 @@ type
     procedure OnContextChanged(const Sender: IObjectListModel; const Context: IList);
 
   public
-    constructor Create(const AModel: IObjectModel; const AOwner: IObjectListModelChangeTracking); reintroduce; overload;
+    constructor Create(const AModel: IObjectModel; const AOwner: IObjectListModel); reintroduce; overload;
     destructor Destroy; override;
 
     function  ProvideObjectModelContext(const DataItem: CObject): IObjectModelContext;
@@ -66,17 +98,187 @@ implementation
 uses
   System.ComponentModel;
 
+{ TEditableObjectModelContext }
+constructor TEditableObjectModelContext.Create(const AModel: IObjectModel; const AOwner: IObjectListModel);
+begin
+  inherited Create(AModel);
+  _Owner := AOwner;
+end;
+
+procedure TEditableObjectModelContext.AddNew(const Item: CObject; Index: Integer; Position: InsertPosition);
+begin
+  // Added by JvA 25-11-2021
+  if get_IsEditOrNew then
+    EndEdit;
+
+  _IsChanged := False;
+  _IsNew := True;
+  _Index := Index;
+
+  inherited set_Context(item);
+
+  var notify: INotifyListItemChanged;
+  if interfaces.Supports<INotifyListItemChanged>(_Owner, notify) then
+    notify.NotifyAddingNew(Self, {var} _Index, Position);
+
+  var cln: ICloneable;
+  if _Context.TryGetValue<ICloneable>(cln) then
+    _SavedContext := cln.Clone else
+    _SavedContext := Item;
+end;
+
+procedure TEditableObjectModelContext.BeginEdit(Index: Integer);
+var
+  eo: IEditableObject;
+  cln: ICloneable;
+begin
+//  Assert((Self as IObjectModelContext) = Owner.ObjectModelContext);
+
+  _IsChanged := False;
+  _IsNew := False;
+  _Index := Index;
+
+  _SavedContext := _Context;
+
+  if _Context.TryGetValue<ICloneable>(cln) then
+  begin
+    BeginUpdate;
+    try
+      inherited set_Context(cln.Clone);
+    finally
+      EndUpdate;
+    end;
+  end;
+
+  if _Context.TryGetValue<IEditableObject>(eo) then
+    eo.BeginEdit;
+
+  var notify: INotifyListItemChanged;
+  if interfaces.Supports<INotifyListItemChanged>(_Owner, notify) then
+    notify.NotifyBeginEdit(Self);
+end;
+
+procedure TEditableObjectModelContext.CancelEdit;
+var
+  eo: IEditableObject;
+begin
+  if get_IsEditOrNew then
+  begin
+    if _Context.TryGetValue<IEditableObject>(eo) then
+      eo.CancelEdit;
+
+    var notify: INotifyListItemChanged;
+    if (_UpdateCount = 0) and interfaces.Supports<INotifyListItemChanged>(_Owner, notify) then
+      notify.NotifyCancelEdit(Self, _SavedContext);
+
+    // in case of clone, set old item back
+    BeginUpdate;
+    try
+      inherited set_Context(_SavedContext);
+    finally
+      EndUpdate;
+    end;
+
+    _SavedContext := nil;
+    _IsChanged := False;
+  end;
+end;
+
+procedure TEditableObjectModelContext.EndEdit;
+var
+  eo: IEditableObject;
+begin
+  if get_IsEditOrNew then
+  begin
+    if _Context.TryGetValue<IEditableObject>(eo) then
+      eo.EndEdit;
+
+    var notify: INotifyListItemChanged;
+    if (_UpdateCount = 0) and interfaces.Supports<INotifyListItemChanged>(_Owner, notify) then
+      notify.NotifyEndEdit(Self, _SavedContext, _Index, _Position);
+
+    _SavedContext := nil;
+    _IsChanged := False;
+  end;
+end;
+
+function TEditableObjectModelContext.get_IsChanged: Boolean;
+begin
+  Result := _IsChanged;
+end;
+
+function TEditableObjectModelContext.get_IsEdit: Boolean;
+begin
+  Result := (_savedContext <> nil) and not _IsNew;
+end;
+
+function TEditableObjectModelContext.get_IsNew: Boolean;
+begin
+  Result := (_savedContext <> nil) and _IsNew;
+end;
+
+function TEditableObjectModelContext.get_IsEditOrNew: Boolean;
+begin
+  Result := _savedContext <> nil;
+end;
+
+function TEditableObjectModelContext.DoContextChanging : Boolean;
+begin
+  Result := inherited;
+  if Result and (_UpdateCount = 0) then
+    EndEdit;
+end;
+
+procedure TEditableObjectModelContext.UpdatePropertyBindingValues;
+begin
+  // do not execute by creating a clone in BeginEdit
+  if (_updateCount = 0) or _IsChanged then
+    inherited;
+end;
+
+procedure TEditableObjectModelContext.UpdatePropertyBindingValues(const APropertyName: CString);
+begin
+  // do not execute by creating a clone in BeginEdit
+  if (_updateCount = 0) or _IsChanged then
+    inherited;
+end;
+
+procedure TEditableObjectModelContext.UpdateValueFromBoundProperty(const ABinding: IPropertyBinding; const Value: CObject; ExecuteTriggers: Boolean);
+begin
+  StartChange;
+  inherited;
+end;
+
+procedure TEditableObjectModelContext.UpdateValueFromBoundProperty(const APropertyName: CString; const Value: CObject; ExecuteTriggers: Boolean);
+begin
+  StartChange;
+  inherited;
+end;
+
+procedure TEditableObjectModelContext.StartChange;
+begin
+  if not get_IsEditOrNew then
+    BeginEdit(-1);
+
+  _IsChanged := True;
+end;
+
 { TMultiEditableObjectModelContext }
 
-constructor TMultiEditableObjectModelContext.Create(const AModel: IObjectModel; const AOwner: IObjectListModelChangeTracking);
+constructor TMultiEditableObjectModelContext.Create(const AModel: IObjectModel; const AOwner: IObjectListModel);
 begin
   inherited;
 
   _contexts := CDictionary<CObject, IObjectModelContext>.Create;
 
-  _onListItemChanged := TOnListItemChanged.Create(Owner, Self);
-  Owner.OnItemChanged.Add(_onListItemChanged);
-  Owner.OnContextChanged.Add(OnContextChanged);
+  var support: IOnItemChangedSupport;
+  if interfaces.Supports<IOnItemChangedSupport>(_Owner, support) then
+  begin
+    _onListItemChanged := TOnListItemChanged.Create(_Owner, Self);
+    support.OnItemChanged.Add(_onListItemChanged);
+  end;
+
+  _Owner.OnContextChanged.Add(OnContextChanged);
 end;
 
 function TMultiEditableObjectModelContext.ProvideObjectModelContext(const DataItem: CObject): IObjectModelContext;
@@ -86,7 +288,7 @@ begin
   if Result = nil then
   begin
     // keep object reference in memory, so we can search back for it and keep track of changes
-    var omc := Owner.ObjectModelContext;
+    var omc := _Owner.ObjectModelContext;
     Result := TStorageObjectModelContext.Create(omc);
     Result.Context := DataItem;
 
@@ -96,10 +298,13 @@ end;
 
 destructor TMultiEditableObjectModelContext.Destroy;
 begin
-  if (Owner <> nil) then
+  if (_Owner <> nil) then
   begin
-    Owner.OnContextChanged.Remove(OnContextChanged);
-    Owner.OnItemChanged.Remove(_onListItemChanged);
+    _Owner.OnContextChanged.Remove(OnContextChanged);
+
+    var support: IOnItemChangedSupport;
+    if interfaces.Supports<IOnItemChangedSupport>(_Owner, support) then
+      support.OnItemChanged.Remove(_onListItemChanged);
   end;
 
   _onListItemChanged := nil;
