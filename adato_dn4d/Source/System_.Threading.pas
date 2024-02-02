@@ -145,23 +145,20 @@ function Lock(const AObject: CObject): ILock;
 var
   hash: Integer;
   objectCS: ICriticalSection;
-
+  captureLockCS: ICriticalSection;
 begin
   if (AObject = nil) then
     Exit(TLock.Create(_globalCS));
 
-//  if AObject.IsObject then
-//    Exit(TObjectLock.Create(AObject.AsType<TObject>))
-//  else if AObject.IsInterface then
-//    Exit(TObjectLock.Create(AObject.AsType<IBaseInterface>.GetObject));
+  captureLockCS := _lockCS;  {_lockCS will become nil during application shutdown}
 
-  if _lockCS = nil then {Will become nil during application shutdown}
+  if captureLockCS = nil then
     Exit(nil);
 
   hash := AObject.GetHashCode;
   objectCS := nil;
 
-  _lockCS.Enter;
+  captureLockCS.Enter;
   try
     // Need to recheck, maybe another thread created a lock for the same object
     if not _globalLocks.TryGetValue(hash, objectCS) then
@@ -172,7 +169,7 @@ begin
     end else
       inc(_readHits);
   finally
-    _lockCS.Leave;
+    captureLockCS.Leave;
   end;
 
   Result := TLock.Create(objectCS); // Calls Enter
@@ -181,22 +178,25 @@ end;
 function HasLock(const AObject: CObject): Boolean;
 var
   hash: Integer;
+  captureLockCS: ICriticalSection;
 
 begin
   if AObject = nil then
     Exit(True);
 
-  if _lockCS = nil then {Will become nil during application shutdown}
+  captureLockCS := _lockCS; // Will become nil during application shutdown
+
+  if captureLockCS = nil then
     Exit(True);
 
   hash := AObject.GetHashCode;
 
-  _lockCS.Enter;
+  captureLockCS.Enter;
   try
     // Need to recheck, maybe another thread created a lock for the same object
     Exit(_globalLocks.ContainsKey(hash));
   finally
-    _lockCS.Leave;
+    captureLockCS.Leave;
   end;
 end;
 
@@ -270,13 +270,21 @@ begin
 end;
 
 function CCriticalSection._Release: Integer;
+var
+  captureLockCS: ICriticalSection;
+
 begin
   Result := inherited;
 
   if (Result = 1) and (_hash <> 0) then
   begin
     // _globalLocksMRW.BeginWrite;
-    _lockCS.Enter;
+    captureLockCS := _lockCS;
+
+    if captureLockCS = nil then
+      Exit;
+
+    captureLockCS.Enter;
     try
       // RefCount will be > 1 if this lock was passed out to another consumer
       // in this case we do not want to Release
@@ -289,7 +297,7 @@ begin
         _globalLocks.Remove(_hash);
     finally
       // _globalLocksMRW.EndWrite;
-      _lockCS.Leave;
+      captureLockCS.Leave;
     end;
   end;
 end;

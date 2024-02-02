@@ -32,10 +32,17 @@ type
     procedure EndUpdate;
   end;
 
+  UpdateFlag = (ApplyUpdate, PrepareUpdate, IgnoreUpdate);
   IUpdatableObjectWithUpdateFlag = interface
     ['{76AEEAE0-1A5F-4552-835C-3C3C41421485}']
+
+    {$IFDEF GDM_INTF}
+    procedure BeginUpdate(Flag: UpdateFlag);
+    procedure EndUpdate(Flag: UpdateFlag);
+    {$ELSE}
     procedure BeginUpdate(PrepareForUpdate: Boolean);
     procedure EndUpdate(IgnoreUpdates: Boolean);
+    {$ENDIF}
   end;
 
   IEditState = interface

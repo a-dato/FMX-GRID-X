@@ -329,7 +329,7 @@ begin
   end;
 end;
 
-class function  Assembly.IsRegisteredEnum(const AType: &Type) : Boolean;
+class function Assembly.IsRegisteredEnum(const AType: &Type) : Boolean;
 begin
   Lock(@EnumRegister);
   if EnumRegister <> nil then
