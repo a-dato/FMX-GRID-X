@@ -3380,13 +3380,12 @@ begin
     i := self.buckets[(num mod Length(self.buckets))];
     while ((i >= 0)) do
     begin
-      var [unsafe] e := self.entries[i];
-      if ((e.hashCode = num) and self.comparer.Equals(e.key, key)) then
+      if ((self.entries[i].hashCode = num) and self.comparer.Equals(self.entries[i].key, key)) then
         begin
           Result := i;
           exit
         end;
-      i := e.next
+      i := self.entries[i].next
     end
   end;
   begin
