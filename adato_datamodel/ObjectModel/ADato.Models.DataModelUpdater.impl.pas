@@ -7,7 +7,8 @@ uses
   System.Collections.Generic,
   ADato.InsertPosition,
   ADato.ObjectModel.List.Tracking.intf,
-  ADato.Models.ContextUpdater.intf;
+  ADato.Models.ContextUpdater.intf,
+  ADato.ObjectModel.TrackInterfaces;
 
 type
   TDataModelModelContextUpdater = class(TBaseInterfacedObject, IObjectModelContextUpdater)

@@ -84,8 +84,8 @@ type
 //    function  get_ObjectModelContextSupport: IObjectModelContextSupport;
     function  get_ObjectModelContext: IObjectModelContext;
 //    procedure set_ObjectModelContext(const Value: IObjectModelContext);
-//    function  get_MultiSelectionContext: List<CObject>;
-//    procedure set_MultiSelectionContext(const Value: List<CObject>);
+    function  get_MultiSelectionContext: List<CObject>;
+    procedure set_MultiSelectionContext(const Value: List<CObject>);
 
     procedure ResetModelProperties;
     function  CreateObjectModelContext : IObjectModelContext;
@@ -104,7 +104,7 @@ type
     event OnContextChanged: ListContextChangedEventHandler;
     {$ENDIF}
     property ObjectModel: IObjectModel read get_ObjectModel write set_ObjectModel;
-//    property MultiSelectionContext: List<CObject> read get_MultiSelectionContext write set_MultiSelectionContext;
+    property MultiSelectionContext: List<CObject> read get_MultiSelectionContext write set_MultiSelectionContext;
   end;
 
   TValidatePosition = reference to function (

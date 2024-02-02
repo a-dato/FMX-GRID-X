@@ -11,7 +11,7 @@ uses
   System.Collections,
   System.Collections.Generic,
   ADato.Data.DataModel.intf,
-  ADato.ObjectModel.List.Tracking.intf,
+  ADato.ObjectModel.TrackInterfaces,
   ADato.ObjectModel.impl;
 
 type
@@ -51,6 +51,9 @@ type
     function  get_ObjectModel: IObjectModel;
     procedure set_ObjectModel(const Value: IObjectModel);
     function  get_ObjectModelContext: IObjectModelContext;
+
+    function  get_MultiSelectionContext: List<CObject>;
+    procedure set_MultiSelectionContext(const Value: List<CObject>);
 
     // IOnItemChangedSupport
     function get_OnItemChanged: IList<IListItemChanged>;
@@ -122,6 +125,11 @@ end;
 function TDataModelObjectListModel.get_Context: IList;
 begin
   Result := _datamodel as IList;
+end;
+
+function TDataModelObjectListModel.get_MultiSelectionContext: List<CObject>;
+begin
+
 end;
 
 function TDataModelObjectListModel.get_ObjectContext: CObject;
@@ -201,6 +209,12 @@ begin
 
   if _OnContextChanged <> nil then
  		_OnContextChanged.Invoke(Self, get_Context);
+end;
+
+procedure TDataModelObjectListModel.set_MultiSelectionContext(
+  const Value: List<CObject>);
+begin
+
 end;
 
 procedure TDataModelObjectListModel.set_ObjectContext(const Value: CObject);

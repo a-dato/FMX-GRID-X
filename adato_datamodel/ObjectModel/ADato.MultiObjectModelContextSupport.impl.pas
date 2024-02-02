@@ -13,8 +13,7 @@ uses
   ADato.ObjectModel.List.intf,
   ADato.MultiObjectModelContextSupport.intf,
   ADato.Models.VirtualListItemDelegate,
-  ADato.ObjectModel.List.Tracking.intf,
-  ADato.ObjectModel.List.Tracking.impl, 
+  ADato.ObjectModel.TrackInterfaces,
   ADato.InsertPosition;
 
 type

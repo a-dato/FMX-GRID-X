@@ -18,7 +18,8 @@ uses
   ADato.ObjectModel.List.intf,
   ADato.ObjectModel.List.Tracking.intf,
   ADato.InsertPosition,
-  ADato.Models.ContextUpdater.intf;
+  ADato.Models.ContextUpdater.intf,
+  ADato.ObjectModel.TrackInterfaces;
 
 type
   IChangedItem = record
