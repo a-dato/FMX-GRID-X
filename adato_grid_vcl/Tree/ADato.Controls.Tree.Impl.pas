@@ -2644,7 +2644,7 @@ begin
         Position := InsertPosition.After;
       TreeDropAction.MoveBefore:
         Position := InsertPosition.Before;
-      TreeDropAction.MoveToChild:
+      else //TreeDropAction.MoveToChild:
         Position := InsertPosition.Child;
     end;
 
